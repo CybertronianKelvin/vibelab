@@ -10,6 +10,9 @@ src-tauri/gen/
 .idea/
 .vscode/
 
+# Internal planning docs
+docs/superpowers/
+
 # Secrets and local config
 .env
 .env.*
