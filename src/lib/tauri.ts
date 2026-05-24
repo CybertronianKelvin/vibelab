@@ -10,8 +10,8 @@ import type {
 } from "../types";
 
 export const tauriClient = {
-  executeCode: (code: string, language: Language): Promise<void> =>
-    invoke("execute_code", { code, language }),
+  executeCode: (code: string, language: Language, nodePath?: string | null): Promise<void> =>
+    invoke("execute_code", { code, language, nodePath: nodePath ?? null }),
 
   installPackage: (name: string): Promise<string> =>
     invoke("install_package", { name }),

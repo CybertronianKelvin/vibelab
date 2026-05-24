@@ -103,8 +103,12 @@ pub async fn execute_code(
     app: AppHandle,
     code: String,
     language: String,
+    node_path: Option<String>,
 ) -> Result<(), String> {
-    let node_path = find_node_path()?;
+    let node_path = match node_path.as_deref() {
+        Some(p) if !p.is_empty() && std::path::Path::new(p).exists() => p.to_string(),
+        _ => find_node_path()?,
+    };
     let workspace = workspace_dir()?;
 
     let suffix = if language == "ts" { ".ts" } else { ".mjs" };

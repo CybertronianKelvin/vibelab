@@ -1,65 +1,153 @@
+import { useEffect, useState } from "react";
 import { useSettings } from "../../hooks/useSettings";
 import { useStore } from "../../store";
+import type { Settings } from "../../types";
 
 export function SettingsPanel() {
   const { toggleSettings } = useStore();
   const { settings, updateSettings } = useSettings();
+  const [local, setLocal] = useState<Settings>({ ...settings });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setLocal({ ...settings });
+  }, [settings]);
+
+  const update = (partial: Partial<Settings>) =>
+    setLocal((prev) => ({ ...prev, ...partial }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    await updateSettings(local);
+    setSaving(false);
+    toggleSettings();
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-[420px] bg-surface-800 rounded-lg shadow-2xl border border-surface-600">
+      <div className="w-[440px] bg-surface-800 rounded-xl shadow-2xl border border-surface-600">
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-600">
           <h2 className="text-sm font-semibold text-gray-200">Settings</h2>
-          <button onClick={toggleSettings} className="text-gray-400 hover:text-gray-200">x</button>
+          <button
+            onClick={toggleSettings}
+            className="text-gray-400 hover:text-gray-200 text-lg leading-none"
+          >
+            ×
+          </button>
         </div>
-        <div className="p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-300">Theme</label>
-            <select value={settings.theme}
-              onChange={(e) => updateSettings({ theme: e.target.value as "dark" | "light" })}
-              className="bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 outline-none">
+
+        <div className="p-5 space-y-5">
+          <Row label="Theme">
+            <select
+              value={local.theme}
+              onChange={(e) => update({ theme: e.target.value as "dark" | "light" })}
+              className="bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 outline-none focus:border-blue-500"
+            >
               <option value="dark">Dark</option>
               <option value="light">Light</option>
             </select>
-          </div>
+          </Row>
 
-          <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-300">Font Size</label>
+          <Row label="Font size">
             <div className="flex items-center gap-2">
-              <button onClick={() => updateSettings({ fontSize: Math.max(10, settings.fontSize - 1) })}
-                className="w-6 h-6 flex items-center justify-center rounded bg-surface-600 text-gray-300">-</button>
-              <span className="text-sm text-gray-200 w-8 text-center">{settings.fontSize}</span>
-              <button onClick={() => updateSettings({ fontSize: Math.min(28, settings.fontSize + 1) })}
-                className="w-6 h-6 flex items-center justify-center rounded bg-surface-600 text-gray-300">+</button>
+              <button
+                onClick={() => update({ fontSize: Math.max(10, local.fontSize - 1) })}
+                className="w-7 h-7 flex items-center justify-center rounded bg-surface-600 hover:bg-surface-500 text-gray-300"
+              >
+                −
+              </button>
+              <span className="text-sm text-gray-200 w-8 text-center">{local.fontSize}</span>
+              <button
+                onClick={() => update({ fontSize: Math.min(28, local.fontSize + 1) })}
+                className="w-7 h-7 flex items-center justify-center rounded bg-surface-600 hover:bg-surface-500 text-gray-300"
+              >
+                +
+              </button>
             </div>
-          </div>
+          </Row>
 
-          <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-300">Auto-run on type</label>
-            <button onClick={() => updateSettings({ autoRun: !settings.autoRun })}
-              className={`w-10 h-5 rounded-full transition-colors relative ${settings.autoRun ? "bg-blue-600" : "bg-surface-500"}`}>
-              <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${settings.autoRun ? "translate-x-5" : ""}`} />
-            </button>
-          </div>
+          <Row label="Auto-run on type">
+            <Toggle
+              value={local.autoRun}
+              onChange={(v) => update({ autoRun: v })}
+            />
+          </Row>
 
-          {settings.autoRun && (
-            <div className="flex items-center justify-between">
-              <label className="text-sm text-gray-300">Delay (ms)</label>
-              <input type="number" value={settings.autoRunDelay}
-                onChange={(e) => updateSettings({ autoRunDelay: Math.max(100, Number(e.target.value)) })}
-                className="w-20 bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 outline-none" />
-            </div>
+          {local.autoRun && (
+            <Row label="Auto-run delay (ms)">
+              <input
+                type="number"
+                value={local.autoRunDelay}
+                onChange={(e) =>
+                  update({ autoRunDelay: Math.max(100, Number(e.target.value)) })
+                }
+                className="w-24 bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 outline-none focus:border-blue-500"
+              />
+            </Row>
           )}
 
           <div>
-            <label className="text-sm text-gray-300 block mb-1">Node.js path (leave empty to auto-detect)</label>
-            <input type="text" value={settings.nodePath ?? ""}
-              onChange={(e) => updateSettings({ nodePath: e.target.value || null })}
-              placeholder="/usr/local/bin/node"
-              className="w-full bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-blue-500" />
+            <label className="text-sm text-gray-300 block mb-1.5">
+              Node.js path
+              <span className="text-gray-600 ml-1 text-xs">(leave empty to auto-detect)</span>
+            </label>
+            <input
+              type="text"
+              value={local.nodePath ?? ""}
+              onChange={(e) => update({ nodePath: e.target.value || null })}
+              placeholder="/usr/local/bin/node  or  /opt/homebrew/bin/node"
+              className="w-full bg-surface-700 border border-surface-500 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-blue-500 font-mono"
+            />
+            {local.nodePath && (
+              <button
+                onClick={() => update({ nodePath: null })}
+                className="mt-1 text-xs text-gray-500 hover:text-gray-300"
+              >
+                Clear (use auto-detect)
+              </button>
+            )}
           </div>
+        </div>
+
+        <div className="flex justify-end gap-2 px-5 py-4 border-t border-surface-600">
+          <button
+            onClick={toggleSettings}
+            className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 rounded hover:bg-surface-700"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-5 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded"
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
         </div>
       </div>
     </div>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between">
+      <label className="text-sm text-gray-300">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!value)}
+      className={`w-10 h-5 rounded-full transition-colors relative ${value ? "bg-blue-600" : "bg-surface-500"}`}
+    >
+      <span
+        className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${value ? "translate-x-5" : ""}`}
+      />
+    </button>
   );
 }

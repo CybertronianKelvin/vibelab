@@ -70,7 +70,8 @@ export default function App() {
     setConsolePct((prev) => {
       const containerHeight = document.documentElement.clientHeight;
       const deltaPct = (delta / containerHeight) * 100;
-      return Math.min(CONSOLE_MAX_PCT, Math.max(CONSOLE_MIN_PCT, prev + deltaPct));
+      // Negative: dragging handle DOWN pushes boundary down → editor grows, console shrinks
+      return Math.min(CONSOLE_MAX_PCT, Math.max(CONSOLE_MIN_PCT, prev - deltaPct));
     });
   }, []);
 

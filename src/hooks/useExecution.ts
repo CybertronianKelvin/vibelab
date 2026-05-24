@@ -12,7 +12,7 @@ export function useExecution() {
       clearOutput();
       setIsRunning(true);
       try {
-        await tauriClient.executeCode(code, language);
+        await tauriClient.executeCode(code, language, settings.nodePath);
       } catch (err) {
         appendOutput({ output_type: "stderr", content: String(err), timestamp: Date.now() });
         setIsRunning(false);
