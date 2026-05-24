@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useStore } from "../../store";
 import { tauriClient } from "../../lib/tauri";
 import { setEditorProjectClasses } from "../Editor/Editor";
@@ -44,6 +45,21 @@ export function Toolbar({ onRun }: Props) {
   } = useStore();
   const { updateSettings } = useSettings();
   const { cancelAutoRun } = useExecution();
+
+  useEffect(() => {
+    const onLink = () => { handleLinkProject().catch(() => {}); };
+    const onUnlink = () => {
+      setProject(null);
+      updateSettings({ projectPath: null, projectType: null });
+      setEditorProjectClasses([]);
+    };
+    window.addEventListener("vibelab:link-project", onLink);
+    window.addEventListener("vibelab:unlink-project", onUnlink);
+    return () => {
+      window.removeEventListener("vibelab:link-project", onLink);
+      window.removeEventListener("vibelab:unlink-project", onUnlink);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLanguageSwitch = (lang: Language) => {
     if (lang === language) return;

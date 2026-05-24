@@ -11,6 +11,7 @@ import { Toolbar } from "./components/Toolbar/Toolbar";
 import { useExecution } from "./hooks/useExecution";
 import { useExecutionListeners } from "./hooks/useExecutionListeners";
 import { useHistory } from "./hooks/useHistory";
+import { useMenuListener } from "./hooks/useMenuListener";
 import { useSettings } from "./hooks/useSettings";
 import { useSnippets } from "./hooks/useSnippets";
 import { useStore } from "./store";
@@ -32,6 +33,7 @@ export default function App() {
   const { loadHistory } = useHistory();
 
   useExecutionListeners();
+  useMenuListener();
 
   // console width % (side layout) / console height % (below layout)
   const [consolePct, setConsolePct] = useState(42);

@@ -84,6 +84,8 @@ export const tauriClient = {
     const result = await open({ directory: true, multiple: false, title: "Select Project Directory" });
     return typeof result === "string" ? result : null;
   },
+
+  uninstallApp: (): Promise<void> => invoke("uninstall_app"),
 };
 
 export const listenAiToken = (
@@ -100,3 +102,8 @@ export const listenExecutionDone = (
   cb: (done: ExecutionDone) => void
 ): Promise<UnlistenFn> =>
   listen<ExecutionDone>("execution-done", (e) => cb(e.payload));
+
+export const listenMenuAction = (
+  cb: (id: string) => void
+): Promise<UnlistenFn> =>
+  listen<string>("menu-action", (e) => cb(e.payload));

@@ -1,5 +1,5 @@
 import MonacoEditor, { type OnMount } from "@monaco-editor/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useExecution } from "../../hooks/useExecution";
 import { tauriClient } from "../../lib/tauri";
 import { useStore } from "../../store";
@@ -309,6 +309,21 @@ export function Editor({ onRun }: Props) {
       setFormatting(false);
     }
   };
+
+  // Menu-driven triggers dispatched by useMenuListener as CustomEvents.
+  useEffect(() => {
+    const onFormat = () => { handleFormat().catch(() => {}); };
+    const onClear  = () => { handleClear(); };
+    const onCopy   = () => { handleCopy().catch(() => {}); };
+    window.addEventListener("vibelab:format",       onFormat);
+    window.addEventListener("vibelab:clear-editor", onClear);
+    window.addEventListener("vibelab:copy-code",    onCopy);
+    return () => {
+      window.removeEventListener("vibelab:format",       onFormat);
+      window.removeEventListener("vibelab:clear-editor", onClear);
+      window.removeEventListener("vibelab:copy-code",    onCopy);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex flex-col h-full">

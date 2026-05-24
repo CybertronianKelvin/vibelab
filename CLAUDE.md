@@ -52,10 +52,12 @@ src-tauri/src/
   executor.rs               Node/tsx subprocess spawning + streaming output
   formatter.rs              Prettier formatting command
   lib.rs                    Tauri builder + all command registrations
+  menu.rs                   Native macOS menu bar (File/Edit/View/Run/Window/Help) — emits "menu-action" events
   packages.rs               npm install/remove/list (workspace: ~/.vibelab/workspace/)
   project.rs                Project folder linking
   settings.rs               Settings persistence (~/.vibelab/settings.json)
   snippets.rs               SQLite snippet storage (~/.vibelab/snippets.db)
+  uninstall.rs              Self-uninstall command — detached helper script wipes all VibeLab data
 ```
 
 ## Key conventions
@@ -65,6 +67,8 @@ src-tauri/src/
 - **Settings**: stored at `~/.vibelab/settings.json`. New struct fields **must** have `#[serde(default)]` to avoid breaking existing installs.
 - **AI providers**: Claude (x-api-key header), OpenAI / Groq / OpenRouter (Bearer + shared `call_openai_compat()` function, different endpoint URLs). Groq free tier: model `llama-3.3-70b-versatile`.
 - **Streaming pattern**: Rust emits `"ai-token"` events via `app.emit()`. Frontend listens with `listenAiToken()` in `useAiChat.ts`. Same pattern as `"execution-output"` for code runs.
+- **Menu-action pattern**: `menu.rs` emits `"menu-action"` with the menu item ID string. `useMenuListener.ts` listens via `listenMenuAction()` and dispatches to the store or fires `window.dispatchEvent(new CustomEvent("vibelab:<action>"))` for component-owned handlers (format, clear, copy, find, link/unlink project).
+- **Self-uninstall**: `uninstall.rs` writes a detached shell helper to `/tmp/vibelab-uninstall.sh`, spawns it with `process_group(0)` so it survives the parent exit, then calls `app.exit(0)`. The helper waits for the parent PID to die before deleting all VibeLab paths.
 - **IPC**: all Tauri commands are typed in `src/lib/tauri.ts` as `tauriClient.*`. Never call `invoke()` directly from components.
 
 ## Zustand store (src/store/index.ts)

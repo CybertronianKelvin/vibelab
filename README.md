@@ -60,6 +60,12 @@ chmod +x vibelab_*.AppImage
 
 ---
 
+## Uninstall
+
+Open VibeLab and choose **Help → Uninstall VibeLab…** from the menu bar. A confirmation dialog will appear — click **Uninstall** and the app will close and remove all of its data (snippets database, settings, npm workspace, and all cache files) automatically. No Terminal required.
+
+---
+
 ## Development
 
 Requirements: [Rust](https://rustup.rs), [Node.js 18+](https://nodejs.org), and the [Tauri v2 prerequisites](https://tauri.app/start/prerequisites/).

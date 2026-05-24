@@ -74,6 +74,13 @@ export function Console() {
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
+  // Menu item "Find in Console" dispatched by useMenuListener
+  useEffect(() => {
+    const handler = () => setShowSearch((v) => !v);
+    window.addEventListener("vibelab:find-console", handler);
+    return () => window.removeEventListener("vibelab:find-console", handler);
+  }, []);
+
   const matchCount = search.trim()
     ? outputLines.reduce(
         (n, l) =>
