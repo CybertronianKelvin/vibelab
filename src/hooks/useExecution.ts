@@ -8,11 +8,13 @@ export function useExecution() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    let unlistenOutput: (() => void) | undefined;
-    let unlistenDone: (() => void) | undefined;
+    let unlistenOutput: (() => void) | null = null;
+    let unlistenDone: (() => void) | null = null;
 
-    listenExecutionOutput((line) => appendOutput(line)).then((u) => (unlistenOutput = u));
-    listenExecutionDone(() => setIsRunning(false)).then((u) => (unlistenDone = u));
+    (async () => {
+      unlistenOutput = await listenExecutionOutput((line) => appendOutput(line));
+      unlistenDone = await listenExecutionDone(() => setIsRunning(false));
+    })();
 
     return () => {
       unlistenOutput?.();

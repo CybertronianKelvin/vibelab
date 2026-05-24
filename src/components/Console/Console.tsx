@@ -33,7 +33,7 @@ export function Console() {
       <div className="flex-1 overflow-y-auto py-2">
         {outputLines.length === 0
           ? <div className="text-gray-600 text-sm font-mono px-4 py-3 italic">Run some code to see output…</div>
-          : outputLines.map((line, i) => <Line key={i} line={line} />)
+          : outputLines.map((line, i) => <Line key={`${line.timestamp}-${i}`} line={line} />)
         }
         <div ref={bottomRef} />
       </div>

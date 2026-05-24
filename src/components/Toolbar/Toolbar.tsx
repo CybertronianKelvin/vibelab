@@ -1,7 +1,7 @@
 import { useStore } from "../../store";
 import type { Language } from "../../types";
 
-interface Props { onRun: () => void }
+interface Props { onRun: (code?: string, lang?: Language) => void }
 
 export function Toolbar({ onRun }: Props) {
   const { language, setLanguage, isRunning, settings,
@@ -24,7 +24,7 @@ export function Toolbar({ onRun }: Props) {
       <span className="text-xs text-gray-600">{settings.autoRun ? "auto" : "manual"}</span>
       <div className="flex-1" />
 
-      <button onClick={onRun} disabled={isRunning}
+      <button onClick={() => onRun()} disabled={isRunning}
         className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium"
         title="Run (Cmd+R or Cmd+Enter)">
         {isRunning ? "Running..." : "Run"}

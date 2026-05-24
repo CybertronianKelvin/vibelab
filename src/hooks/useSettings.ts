@@ -20,8 +20,13 @@ export function useSettings() {
     async (updates: Partial<Settings>) => {
       const updated = { ...settings, ...updates };
       setSettings(updated);
-      await tauriClient.saveSettings(updated);
-      applyTheme(updated.theme);
+      try {
+        await tauriClient.saveSettings(updated);
+        applyTheme(updated.theme);
+      } catch (err) {
+        setSettings(settings);
+        console.error("Failed to save settings:", err);
+      }
     },
     [settings, setSettings]
   );
