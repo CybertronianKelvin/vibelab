@@ -70,9 +70,19 @@ echo "  Bumped versions to $VERSION"
 
 # --- Commit, tag, push --------------------------------------------------
 git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml
-git commit -m "chore: release $TAG"
-git tag "$TAG"
-git push origin main --tags
+if git diff --cached --quiet; then
+  echo "  Versions already at $VERSION — skipping version commit"
+else
+  git commit -m "chore: release $TAG"
+  git push origin main
+fi
+
+if git rev-parse "$TAG" &>/dev/null; then
+  echo "  Tag $TAG already exists — skipping tag"
+else
+  git tag "$TAG"
+  git push origin "$TAG"
+fi
 echo "  Tagged and pushed $TAG"
 
 # --- Build --------------------------------------------------------------
