@@ -10,14 +10,7 @@
 
 ## Download
 
-Grab the latest release for your platform from the **[Releases page](https://github.com/CybertronianKelvin/vibelab/releases/latest)**:
-
-| Platform | Installer |
-|---|---|
-| macOS (Apple Silicon) | `VibeLab_x.y.z_aarch64.dmg` |
-| macOS (Intel) | `VibeLab_x.y.z_x64.dmg` |
-| Windows | `VibeLab_x.y.z_x64-setup.exe` |
-| Linux | `vibelab_x.y.z_amd64.deb` · `AppImage` |
+macOS only for now — grab the latest `.dmg` from the **[Releases page](https://github.com/CybertronianKelvin/vibelab/releases/latest)**. Windows and Linux builds will be added when available.
 
 ---
 
@@ -35,6 +28,8 @@ Grab the latest release for your platform from the **[Releases page](https://git
 ---
 
 ## Install
+
+**Current builds: macOS only.** Windows and Linux installers will be added when available.
 
 ### macOS
 
