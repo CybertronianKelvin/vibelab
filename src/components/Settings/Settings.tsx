@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSettings } from "../../hooks/useSettings";
 import { useStore } from "../../store";
-import type { Settings } from "../../types";
+import type { AiProvider, Settings } from "../../types";
 
 export function SettingsPanel() {
   const { toggleSettings } = useStore();
@@ -41,7 +41,7 @@ export function SettingsPanel() {
             <select
               value={local.theme}
               onChange={(e) => update({ theme: e.target.value as "dark" | "light" })}
-              className="bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 outline-none focus:border-emerald-500"
+              className="bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 outline-none focus:border-brand-500"
             >
               <option value="dark">Dark</option>
               <option value="light">Light</option>
@@ -73,6 +73,19 @@ export function SettingsPanel() {
             />
           </Row>
 
+          <Row label="History limit">
+            <select
+              value={local.historyLimit}
+              onChange={(e) => update({ historyLimit: Number(e.target.value) })}
+              className="bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 outline-none focus:border-brand-500"
+            >
+              <option value={25}>25 runs</option>
+              <option value={50}>50 runs</option>
+              <option value={100}>100 runs</option>
+              <option value={200}>200 runs</option>
+            </select>
+          </Row>
+
           {local.autoRun && (
             <Row label="Auto-run delay (ms)">
               <input
@@ -81,7 +94,7 @@ export function SettingsPanel() {
                 onChange={(e) =>
                   update({ autoRunDelay: Math.max(100, Number(e.target.value)) })
                 }
-                className="w-24 bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 outline-none focus:border-emerald-500"
+                className="w-24 bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 outline-none focus:border-brand-500"
               />
             </Row>
           )}
@@ -96,7 +109,7 @@ export function SettingsPanel() {
               value={local.nodePath ?? ""}
               onChange={(e) => update({ nodePath: e.target.value || null })}
               placeholder="/usr/local/bin/node  or  /opt/homebrew/bin/node"
-              className="w-full bg-surface-700 border border-surface-500 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-emerald-500 font-mono"
+              className="w-full bg-surface-700 border border-surface-500 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-brand-500 font-mono"
             />
             {local.nodePath && (
               <button
@@ -118,7 +131,7 @@ export function SettingsPanel() {
               value={local.phpPath ?? ""}
               onChange={(e) => update({ phpPath: e.target.value || null })}
               placeholder="/usr/bin/php  or  /opt/homebrew/bin/php"
-              className="w-full bg-surface-700 border border-surface-500 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-emerald-500 font-mono"
+              className="w-full bg-surface-700 border border-surface-500 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-brand-500 font-mono"
             />
             {local.phpPath && (
               <button
@@ -127,6 +140,58 @@ export function SettingsPanel() {
               >
                 Clear (use auto-detect)
               </button>
+            )}
+          </div>
+
+          <div className="border-t border-surface-600 pt-4">
+            <p className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide">AI Assistant</p>
+
+            <Row label="Provider">
+              <select
+                value={local.aiProvider ?? ""}
+                onChange={(e) => update({ aiProvider: (e.target.value as AiProvider) || null, aiModel: null })}
+                className="bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 outline-none focus:border-brand-500"
+              >
+                <option value="">None</option>
+                <option value="claude">Claude (Anthropic)</option>
+                <option value="openai">OpenAI</option>
+                <option value="groq">Groq (free tier)</option>
+                <option value="openrouter">OpenRouter</option>
+              </select>
+            </Row>
+
+            {local.aiProvider && (
+              <>
+                <div className="mt-3">
+                  <label className="text-sm text-gray-300 block mb-1.5">API Key</label>
+                  <input
+                    type="password"
+                    value={local.aiApiKey ?? ""}
+                    onChange={(e) => update({ aiApiKey: e.target.value || null })}
+                    placeholder={
+                      local.aiProvider === "claude" ? "sk-ant-…" :
+                      local.aiProvider === "openai" ? "sk-…" :
+                      local.aiProvider === "groq" ? "gsk_…" : "sk-or-…"
+                    }
+                    className="w-full bg-surface-700 border border-surface-500 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-brand-500 font-mono"
+                  />
+                </div>
+
+                <div className="mt-3">
+                  <label className="text-sm text-gray-300 block mb-1.5">Model</label>
+                  <input
+                    type="text"
+                    value={local.aiModel ?? ""}
+                    onChange={(e) => update({ aiModel: e.target.value || null })}
+                    placeholder={
+                      local.aiProvider === "claude" ? "claude-sonnet-4-6" :
+                      local.aiProvider === "openai" ? "gpt-4o" :
+                      local.aiProvider === "groq" ? "llama-3.3-70b-versatile" : "anthropic/claude-3.5-sonnet"
+                    }
+                    className="w-full bg-surface-700 border border-surface-500 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-brand-500 font-mono"
+                  />
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -141,7 +206,7 @@ export function SettingsPanel() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-5 py-2 text-sm font-medium bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold rounded"
+            className="px-5 py-2 text-sm font-medium bg-brand-500 hover:bg-brand-400 disabled:opacity-50 text-white font-semibold rounded"
           >
             {saving ? "Saving…" : "Save"}
           </button>
@@ -165,7 +230,7 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
     <button
       type="button"
       onClick={() => onChange(!value)}
-      className={`w-10 h-5 rounded-full transition-colors relative ${value ? "bg-emerald-500" : "bg-surface-500"}`}
+      className={`w-10 h-5 rounded-full transition-colors relative ${value ? "bg-brand-500" : "bg-surface-500"}`}
     >
       <span
         className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${value ? "translate-x-5" : ""}`}

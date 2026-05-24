@@ -1,6 +1,16 @@
+# Build artifacts
 node_modules/
 dist/
-.DS_Store
-
 src-tauri/target/
 src-tauri/gen/
+
+# OS / IDE noise
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# Secrets and local config
+.env
+.env.*
+.env.local

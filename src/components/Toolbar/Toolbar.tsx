@@ -1,5 +1,8 @@
 import { useStore } from "../../store";
 import { tauriClient } from "../../lib/tauri";
+import { setEditorProjectClasses } from "../Editor/Editor";
+import { useExecution } from "../../hooks/useExecution";
+import { useSettings } from "../../hooks/useSettings";
 import type { Language, ProjectType } from "../../types";
 
 interface Props { onRun: (code?: string, lang?: Language) => void }
@@ -27,52 +30,86 @@ const PROJECT_TYPE_LABEL: Record<ProjectType, string> = {
 
 function projectBadge(type: ProjectType) {
   if (type === "laravel") return "bg-red-900/50 text-red-300";
-  if (type === "node") return "bg-emerald-900/50 text-emerald-300";
+  if (type === "node") return "bg-green-900/50 text-green-300";
   if (type === "php") return "bg-blue-900/50 text-blue-300";
   return "bg-surface-600 text-gray-400";
 }
 
 export function Toolbar({ onRun }: Props) {
   const {
-    language, setLanguage, isRunning, settings,
-    consoleLayout, project, setProject,
-    toggleSidebar, togglePackages, toggleSettings, toggleConsoleLayout,
+    language, setLanguage, isRunning, settings, code,
+    consoleLayout, project, setProject, clearOutput, aiChatOpen,
+    toggleSidebar, togglePackages, toggleSettings, toggleConsoleLayout, toggleSnippetModal, toggleAiChat,
+    activeSnippetId, setActiveSnippetId, setCode,
   } = useStore();
+  const { updateSettings } = useSettings();
+  const { cancelAutoRun } = useExecution();
+
+  const handleLanguageSwitch = (lang: Language) => {
+    if (lang === language) return;
+    cancelAutoRun();
+    clearOutput();
+    if (activeSnippetId) {
+      setCode("");
+      setActiveSnippetId(null);
+    }
+    setLanguage(lang);
+  };
 
   const handleLinkProject = async () => {
     const path = await tauriClient.selectDirectory();
     if (!path) return;
     const type = await detectProjectType(path);
     setProject({ path, type });
+    updateSettings({ projectPath: path, projectType: type });
+    if (type === "laravel" || type === "php") {
+      tauriClient.getProjectClasses(path)
+        .then((classes) => setEditorProjectClasses(classes))
+        .catch(() => {});
+    }
   };
 
   const handleUnlinkProject = (e: React.MouseEvent) => {
     e.stopPropagation();
     setProject(null);
+    updateSettings({ projectPath: null, projectType: null });
+    setEditorProjectClasses([]);
   };
 
   const projectName = project ? project.path.split("/").pop() ?? project.path : null;
 
   return (
     <header className="flex items-center gap-2 px-4 py-2 border-b border-surface-600 bg-surface-800 shrink-0">
-      <span className="text-base font-bold text-emerald-400 mr-1 select-none">LexJS</span>
+      <span className="text-base font-bold text-brand-500 mr-1 select-none">VibeLab</span>
 
       <button
         onClick={toggleSidebar}
-        className="px-2 py-1 rounded text-xs text-gray-400 hover:text-gray-200 hover:bg-surface-600"
-        title="Snippets (toggle sidebar)"
+        className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-surface-600 transition-colors"
+        title="Library (Snippets & History)"
       >
-        Snippets
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <rect x="1" y="1" width="13" height="13" rx="1.5" />
+          <line x1="5" y1="1" x2="5" y2="14" />
+        </svg>
+      </button>
+
+      <button
+        onClick={toggleSnippetModal}
+        disabled={!code.trim()}
+        className="px-2 py-1 rounded text-xs text-gray-400 hover:text-gray-200 hover:bg-surface-600 disabled:opacity-40"
+        title="Save current code as snippet"
+      >
+        + Snippet
       </button>
 
       <div className="flex rounded overflow-hidden border border-surface-600 text-xs">
         {(["js", "ts", "php"] as Language[]).map((lang) => (
           <button
             key={lang}
-            onClick={() => setLanguage(lang)}
+            onClick={() => handleLanguageSwitch(lang)}
             className={`px-3 py-1 font-mono font-semibold transition-colors ${
               language === lang
-                ? "bg-emerald-500 text-white"
+                ? "bg-brand-500 text-white"
                 : "text-gray-400 hover:text-gray-200 hover:bg-surface-600"
             }`}
           >
@@ -113,6 +150,20 @@ export function Toolbar({ onRun }: Props) {
       <div className="flex-1" />
 
       <button
+        onClick={toggleAiChat}
+        className={`p-1.5 rounded transition-colors ${
+          aiChatOpen
+            ? "text-brand-500 bg-brand-900/30 hover:bg-brand-900/50"
+            : "text-gray-400 hover:text-gray-200 hover:bg-surface-600"
+        }`}
+        title="Toggle AI Chat"
+      >
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M13 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h3l2 2 2-2h4a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z" />
+        </svg>
+      </button>
+
+      <button
         onClick={toggleConsoleLayout}
         className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-surface-600 transition-colors"
         title={consoleLayout === "side" ? "Move output below editor" : "Move output to right side"}
@@ -123,7 +174,7 @@ export function Toolbar({ onRun }: Props) {
       <button
         onClick={() => onRun()}
         disabled={isRunning}
-        className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white text-sm font-semibold transition-colors"
+        className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-brand-500 hover:bg-brand-400 disabled:opacity-50 text-white text-sm font-semibold transition-colors"
         title="Run (Cmd+R or Cmd+Enter)"
       >
         {isRunning ? "Running…" : "▶ Run"}

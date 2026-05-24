@@ -1,10 +1,10 @@
 [package]
-name = "lexjs"
+name = "vibelab"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "lexjs_lib"
+name = "vibelab_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -22,6 +22,8 @@ uuid = { version = "1", features = ["v4"] }
 tokio = { version = "1", features = ["full"] }
 tempfile = "3"
 chrono = "0.4"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+futures-util = "0.3"
 
 [profile.release]
 panic = "abort"

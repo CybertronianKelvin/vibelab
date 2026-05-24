@@ -9,6 +9,8 @@ html, body, #root {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  background-color: #0d0d0d;
+  color: #e5e7eb;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }

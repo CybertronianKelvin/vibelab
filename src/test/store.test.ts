@@ -4,7 +4,7 @@ import type { ExecutionLine, Snippet } from "../types";
 
 beforeEach(() => {
   useStore.setState({
-    code: '// Welcome to LexJS\nconsole.log("Hello, World!");\n',
+    code: '// Welcome to VibeLab\nconsole.log("Hello, World!");\n',
     language: "js",
     isRunning: false,
     outputLines: [],

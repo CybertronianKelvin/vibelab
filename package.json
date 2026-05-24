@@ -1,5 +1,5 @@
 {
-  "name": "lexjs",
+  "name": "vibelab",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,8 @@
     "tauri": "tauri",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "release": "bash scripts/release.sh"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",

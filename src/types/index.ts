@@ -22,6 +22,15 @@ export interface Package {
   version: string;
 }
 
+export type Language = "js" | "ts" | "php";
+
+export interface HistoryEntry {
+  id: string;
+  code: string;
+  language: Language;
+  ranAt: string;
+}
+
 export interface Settings {
   theme: "dark" | "light";
   fontSize: number;
@@ -30,13 +39,26 @@ export interface Settings {
   envVars: Record<string, string>;
   nodePath: string | null;
   phpPath: string | null;
+  historyLimit: number;
+  projectPath: string | null;
+  projectType: string | null;
+  aiProvider: AiProvider | null;
+  aiApiKey: string | null;
+  aiModel: string | null;
 }
-
-export type Language = "js" | "ts" | "php";
 
 export type ProjectType = "node" | "laravel" | "php" | "unknown";
 
 export interface ProjectContext {
   path: string;
   type: ProjectType;
+}
+
+export type AiProvider = "claude" | "openai" | "openrouter" | "groq";
+
+export interface AiMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
 }

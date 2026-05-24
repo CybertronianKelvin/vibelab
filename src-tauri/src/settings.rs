@@ -2,6 +2,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+fn default_history_limit() -> u32 {
+    100
+}
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Settings {
     pub theme: String,
@@ -17,6 +21,18 @@ pub struct Settings {
     pub node_path: Option<String>,
     #[serde(rename = "phpPath", default)]
     pub php_path: Option<String>,
+    #[serde(rename = "historyLimit", default = "default_history_limit")]
+    pub history_limit: u32,
+    #[serde(rename = "projectPath", default)]
+    pub project_path: Option<String>,
+    #[serde(rename = "projectType", default)]
+    pub project_type: Option<String>,
+    #[serde(rename = "aiProvider", default)]
+    pub ai_provider: Option<String>,
+    #[serde(rename = "aiApiKey", default)]
+    pub ai_api_key: Option<String>,
+    #[serde(rename = "aiModel", default)]
+    pub ai_model: Option<String>,
 }
 
 impl Default for Settings {
@@ -29,13 +45,19 @@ impl Default for Settings {
             env_vars: HashMap::new(),
             node_path: None,
             php_path: None,
+            history_limit: 100,
+            project_path: None,
+            project_type: None,
+            ai_provider: None,
+            ai_api_key: None,
+            ai_model: None,
         }
     }
 }
 
 fn settings_path() -> Result<PathBuf, String> {
     let home = std::env::var("HOME").map_err(|e| e.to_string())?;
-    let dir = PathBuf::from(home).join(".lexjs");
+    let dir = PathBuf::from(home).join(".vibelab");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir.join("settings.json"))
 }
@@ -95,6 +117,12 @@ mod tests {
             env_vars: std::collections::HashMap::new(),
             node_path: Some("/usr/local/bin/node".to_string()),
             php_path: Some("/usr/bin/php".to_string()),
+            history_limit: 50,
+            project_path: None,
+            project_type: None,
+            ai_provider: None,
+            ai_api_key: None,
+            ai_model: None,
         };
         let json = serde_json::to_string(&original).unwrap();
         let restored: Settings = serde_json::from_str(&json).unwrap();

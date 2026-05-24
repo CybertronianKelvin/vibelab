@@ -1,6 +1,6 @@
 {
   "identifier": "default",
-  "description": "Default capabilities for LexJS",
+  "description": "Default capabilities for VibeLab",
   "windows": ["main"],
   "permissions": [
     "core:default",

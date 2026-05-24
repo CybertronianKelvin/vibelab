@@ -1,10 +1,11 @@
 import { useCallback } from "react";
+import { setEditorProjectClasses } from "../components/Editor/Editor";
 import { tauriClient } from "../lib/tauri";
 import { useStore } from "../store";
-import type { Settings } from "../types";
+import type { ProjectType, Settings } from "../types";
 
 export function useSettings() {
-  const { settings, setSettings } = useStore();
+  const { settings, setSettings, setProject } = useStore();
 
   const applyTheme = (theme: string) => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -14,7 +15,15 @@ export function useSettings() {
     const s = await tauriClient.getSettings();
     setSettings(s);
     applyTheme(s.theme);
-  }, [setSettings]);
+    if (s.projectPath && s.projectType) {
+      setProject({ path: s.projectPath, type: s.projectType as ProjectType });
+      if (s.projectType === "laravel" || s.projectType === "php") {
+        tauriClient.getProjectClasses(s.projectPath)
+          .then((classes) => setEditorProjectClasses(classes))
+          .catch(() => {});
+      }
+    }
+  }, [setSettings, setProject]);
 
   const updateSettings = useCallback(
     async (updates: Partial<Settings>) => {

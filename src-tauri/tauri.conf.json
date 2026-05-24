@@ -1,7 +1,7 @@
 {
-  "productName": "LexJS",
+  "productName": "VibeLab",
   "version": "0.1.0",
-  "identifier": "dev.lexjs.app",
+  "identifier": "dev.vibelab.app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -12,12 +12,13 @@
     "withGlobalTauri": false,
     "windows": [
       {
-        "title": "LexJS",
+        "title": "VibeLab",
         "width": 1400,
         "height": 900,
         "minWidth": 900,
         "minHeight": 600,
-        "resizable": true
+        "resizable": true,
+        "backgroundColor": "#0d0d0d"
       }
     ],
     "security": { "csp": null }

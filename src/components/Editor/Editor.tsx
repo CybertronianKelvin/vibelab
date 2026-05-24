@@ -216,6 +216,7 @@ export function Editor({ onRun }: Props) {
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
   const [formatting, setFormatting] = useState(false);
   const [formatError, setFormatError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const theme = settings.theme === "dark" ? "vibelab-dark" : "vibelab-light";
 
@@ -288,6 +289,13 @@ export function Editor({ onRun }: Props) {
     setFormatError(null);
   };
 
+  const handleCopy = async () => {
+    if (!code.trim()) return;
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   const handleFormat = async () => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -314,6 +322,14 @@ export function Editor({ onRun }: Props) {
               {formatError}
             </span>
           )}
+          <button
+            onClick={handleCopy}
+            disabled={!code.trim()}
+            className="text-xs text-gray-500 hover:text-gray-300 disabled:opacity-30"
+            title="Copy all code"
+          >
+            {copied ? "Copied!" : "Copy"}
+          </button>
           <button
             onClick={handleFormat}
             disabled={!code.trim() || formatting}

@@ -4,10 +4,10 @@ import { useStore } from "../store";
 import type { Language } from "../types";
 
 export function useExecution() {
-  const { appendOutput, clearOutput, setIsRunning, settings, project } = useStore();
+  const { appendOutput, clearOutput, setIsRunning, settings, project, prependHistory } = useStore();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const run = useCallback(
+  const execute = useCallback(
     async (code: string, language: Language) => {
       clearOutput();
       setIsRunning(true);
@@ -21,14 +21,34 @@ export function useExecution() {
     [clearOutput, setIsRunning, appendOutput, settings.nodePath, settings.phpPath, project]
   );
 
+  const run = useCallback(
+    async (code: string, language: Language) => {
+      if (code.trim()) {
+        tauriClient
+          .saveHistoryEntry({ id: "", code, language, ranAt: "" }, settings.historyLimit)
+          .then((entry) => prependHistory(entry))
+          .catch(() => {});
+      }
+      await execute(code, language);
+    },
+    [execute, prependHistory, settings.historyLimit]
+  );
+
+  const cancelAutoRun = useCallback(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+  }, []);
+
   const scheduleAutoRun = useCallback(
     (code: string, language: Language) => {
       if (!settings.autoRun) return;
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => run(code, language), settings.autoRunDelay);
+      debounceRef.current = setTimeout(() => execute(code, language), settings.autoRunDelay);
     },
-    [run, settings.autoRun, settings.autoRunDelay]
+    [execute, settings.autoRun, settings.autoRunDelay]
   );
 
-  return { run, scheduleAutoRun };
+  return { run, scheduleAutoRun, cancelAutoRun };
 }

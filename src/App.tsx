@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
+import { AiChat } from "./components/AiChat/AiChat";
 import { Console } from "./components/Console/Console";
 import { Editor } from "./components/Editor/Editor";
 import { PackageManager } from "./components/PackageManager/PackageManager";
 import { ResizeHandle } from "./components/ResizeHandle/ResizeHandle";
 import { SettingsPanel } from "./components/Settings/Settings";
 import { Sidebar } from "./components/Sidebar/Sidebar";
+import { SnippetModal } from "./components/SnippetModal/SnippetModal";
 import { Toolbar } from "./components/Toolbar/Toolbar";
 import { useExecution } from "./hooks/useExecution";
 import { useExecutionListeners } from "./hooks/useExecutionListeners";
+import { useHistory } from "./hooks/useHistory";
 import { useSettings } from "./hooks/useSettings";
 import { useSnippets } from "./hooks/useSnippets";
 import { useStore } from "./store";
@@ -19,13 +22,14 @@ const EDITOR_MIN_PCT = 25;
 
 export default function App() {
   const {
-    code, language,
-    sidebarOpen, packagesOpen, settingsOpen, consoleLayout,
+    code, language, setCode,
+    sidebarOpen, packagesOpen, settingsOpen, snippetModalOpen, consoleLayout, aiChatOpen,
     clearOutput,
   } = useStore();
   const { run } = useExecution();
   const { loadSnippets } = useSnippets();
-  const { loadSettings, settings } = useSettings();
+  const { loadSettings, settings, updateSettings } = useSettings();
+  const { loadHistory } = useHistory();
 
   useExecutionListeners();
 
@@ -35,6 +39,7 @@ export default function App() {
   useEffect(() => {
     loadSettings();
     loadSnippets();
+    loadHistory();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -43,19 +48,38 @@ export default function App() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "e") {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      if (e.key === "e") {
         e.preventDefault();
         clearOutput();
+      } else if (e.key === "=" || e.key === "+") {
+        e.preventDefault();
+        updateSettings({ fontSize: Math.min(28, settings.fontSize + 1) });
+      } else if (e.key === "-") {
+        e.preventDefault();
+        updateSettings({ fontSize: Math.max(10, settings.fontSize - 1) });
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [clearOutput]);
+  }, [clearOutput, updateSettings, settings.fontSize]);
 
   const handleRun = useCallback(
     (codeArg?: string, langArg?: Language) => run(codeArg ?? code, langArg ?? language),
     [run, code, language]
   );
+
+  // Cmd+R to run when the Monaco editor doesn't have focus (Monaco handles it internally when it does)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key !== "r") return;
+      if (document.querySelector(".monaco-editor.focused")) return;
+      e.preventDefault();
+      handleRun();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleRun]);
 
   const handleHorizontalResize = useCallback((delta: number) => {
     setConsolePct((prev) => {
@@ -81,7 +105,7 @@ export default function App() {
       <Toolbar onRun={handleRun} />
 
       <div className="flex flex-1 overflow-hidden min-h-0">
-        {sidebarOpen && <Sidebar />}
+        {sidebarOpen && <Sidebar onRun={handleRun} />}
 
         {consoleLayout === "side" ? (
           <>
@@ -110,8 +134,15 @@ export default function App() {
         )}
       </div>
 
+      {aiChatOpen && (
+        <div className="shrink-0 border-t border-surface-600" style={{ height: "280px" }}>
+          <AiChat onInsertCode={setCode} />
+        </div>
+      )}
+
       {packagesOpen && <PackageManager />}
       {settingsOpen && <SettingsPanel />}
+      {snippetModalOpen && <SnippetModal />}
     </div>
   );
 }

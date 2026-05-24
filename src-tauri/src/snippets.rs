@@ -14,9 +14,18 @@ pub struct Snippet {
     pub updated_at: String,
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct HistoryEntry {
+    pub id: String,
+    pub code: String,
+    pub language: String,
+    #[serde(rename = "ranAt")]
+    pub ran_at: String,
+}
+
 fn db_path() -> Result<PathBuf, String> {
     let home = std::env::var("HOME").map_err(|e| e.to_string())?;
-    let dir = PathBuf::from(home).join(".lexjs");
+    let dir = PathBuf::from(home).join(".vibelab");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir.join("snippets.db"))
 }
@@ -31,6 +40,12 @@ fn open_db() -> Result<Connection, String> {
             language TEXT NOT NULL DEFAULT 'js',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS history (
+            id TEXT PRIMARY KEY,
+            code TEXT NOT NULL,
+            language TEXT NOT NULL DEFAULT 'js',
+            ran_at TEXT NOT NULL
         );",
     )
     .map_err(|e| e.to_string())?;
@@ -101,6 +116,55 @@ pub fn save_snippet(snippet: Snippet) -> Result<Snippet, String> {
 pub fn delete_snippet(id: String) -> Result<(), String> {
     let conn = open_db()?;
     conn.execute("DELETE FROM snippets WHERE id = ?1", params![id])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_history(limit: u32) -> Result<Vec<HistoryEntry>, String> {
+    let conn = open_db()?;
+    let mut stmt = conn
+        .prepare("SELECT id, code, language, ran_at FROM history ORDER BY ran_at DESC LIMIT ?1")
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map(params![limit], |row| {
+            Ok(HistoryEntry {
+                id: row.get(0)?,
+                code: row.get(1)?,
+                language: row.get(2)?,
+                ran_at: row.get(3)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    rows.map(|r| r.map_err(|e| e.to_string()))
+        .collect::<Result<Vec<_>, _>>()
+}
+
+#[tauri::command]
+pub fn save_history_entry(entry: HistoryEntry, limit: u32) -> Result<HistoryEntry, String> {
+    let mut entry = entry;
+    let conn = open_db()?;
+    entry.id = uuid::Uuid::new_v4().to_string();
+    entry.ran_at = now_iso();
+    conn.execute(
+        "INSERT INTO history (id, code, language, ran_at) VALUES (?1, ?2, ?3, ?4)",
+        params![entry.id, entry.code, entry.language, entry.ran_at],
+    )
+    .map_err(|e| e.to_string())?;
+    conn.execute(
+        "DELETE FROM history WHERE id NOT IN (
+            SELECT id FROM history ORDER BY ran_at DESC LIMIT ?1
+        )",
+        params![limit],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(entry)
+}
+
+#[tauri::command]
+pub fn clear_history() -> Result<(), String> {
+    let conn = open_db()?;
+    conn.execute("DELETE FROM history", [])
         .map_err(|e| e.to_string())?;
     Ok(())
 }
