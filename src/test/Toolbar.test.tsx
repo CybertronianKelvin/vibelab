@@ -19,7 +19,7 @@ describe("Toolbar", () => {
     const user = userEvent.setup();
     const onRun = vi.fn();
     render(<Toolbar onRun={onRun} />);
-    await user.click(screen.getByText("Run"));
+    await user.click(screen.getByRole("button", { name: /Run/ }));
     expect(onRun).toHaveBeenCalledOnce();
   });
 

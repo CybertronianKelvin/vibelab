@@ -9,13 +9,22 @@ function defineThemes(monaco: Parameters<OnMount>[1]) {
     base: "vs-dark",
     inherit: true,
     rules: [],
-    colors: { "editor.background": "#0d0d0d", "editor.lineHighlightBackground": "#1a1a1a" },
+    colors: {
+      "editor.background": "#0d0d0d",
+      "editor.lineHighlightBackground": "#1a1710",
+      "editorCursor.foreground": "#f59e0b",
+      "editor.selectionBackground": "#f59e0b30",
+    },
   });
   monaco.editor.defineTheme("lexjs-light", {
     base: "vs",
     inherit: true,
     rules: [],
-    colors: { "editor.background": "#fafafa" },
+    colors: {
+      "editor.background": "#fafaf8",
+      "editorCursor.foreground": "#d97706",
+      "editor.selectionBackground": "#f59e0b25",
+    },
   });
 }
 

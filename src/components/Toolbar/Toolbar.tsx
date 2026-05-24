@@ -26,7 +26,7 @@ export function Toolbar({ onRun }: Props) {
 
   return (
     <header className="flex items-center gap-2 px-4 py-2 border-b border-surface-600 bg-surface-800 shrink-0">
-      <span className="text-base font-bold text-blue-400 mr-1 select-none">LexJS</span>
+      <span className="text-base font-bold text-amber-400 mr-1 select-none">LexJS</span>
 
       <button
         onClick={toggleSidebar}
@@ -36,14 +36,14 @@ export function Toolbar({ onRun }: Props) {
         Snippets
       </button>
 
-      <div className="flex rounded overflow-hidden border border-surface-500 text-xs">
+      <div className="flex rounded overflow-hidden border border-surface-600 text-xs">
         {(["js", "ts"] as Language[]).map((lang) => (
           <button
             key={lang}
             onClick={() => setLanguage(lang)}
             className={`px-3 py-1 font-mono font-semibold transition-colors ${
               language === lang
-                ? "bg-blue-600 text-white"
+                ? "bg-amber-500 text-gray-900"
                 : "text-gray-400 hover:text-gray-200 hover:bg-surface-600"
             }`}
           >
@@ -67,10 +67,10 @@ export function Toolbar({ onRun }: Props) {
       <button
         onClick={() => onRun()}
         disabled={isRunning}
-        className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+        className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-gray-900 text-sm font-semibold transition-colors"
         title="Run (Cmd+R or Cmd+Enter)"
       >
-        {isRunning ? "Running…" : "Run"}
+        {isRunning ? "Running…" : "▶ Run"}
       </button>
 
       <button
