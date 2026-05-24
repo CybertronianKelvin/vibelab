@@ -1,0 +1,18 @@
+{
+  "identifier": "default",
+  "description": "Default capabilities for LexJS",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:default",
+    "shell:allow-execute",
+    "shell:allow-spawn",
+    "dialog:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "fs:default",
+    "fs:allow-read-text-file",
+    "fs:allow-write-text-file",
+    "fs:allow-create-dir"
+  ]
+}
