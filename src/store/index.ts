@@ -39,10 +39,12 @@ interface AppState {
   packagesOpen: boolean;
   settingsOpen: boolean;
   previewOpen: boolean;
+  consoleLayout: "side" | "below";
   toggleSidebar: () => void;
   togglePackages: () => void;
   toggleSettings: () => void;
   togglePreview: () => void;
+  toggleConsoleLayout: () => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -78,8 +80,11 @@ export const useStore = create<AppState>((set) => ({
   packagesOpen: false,
   settingsOpen: false,
   previewOpen: false,
+  consoleLayout: "side",
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
   togglePackages: () => set((s) => ({ packagesOpen: !s.packagesOpen })),
   toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   togglePreview: () => set((s) => ({ previewOpen: !s.previewOpen })),
+  toggleConsoleLayout: () =>
+    set((s) => ({ consoleLayout: s.consoleLayout === "side" ? "below" : "side" })),
 }));

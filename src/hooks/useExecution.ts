@@ -1,26 +1,11 @@
-import { useCallback, useEffect, useRef } from "react";
-import { listenExecutionDone, listenExecutionOutput, tauriClient } from "../lib/tauri";
+import { useCallback, useRef } from "react";
+import { tauriClient } from "../lib/tauri";
 import { useStore } from "../store";
 import type { Language } from "../types";
 
 export function useExecution() {
   const { appendOutput, clearOutput, setIsRunning, settings } = useStore();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    let unlistenOutput: (() => void) | null = null;
-    let unlistenDone: (() => void) | null = null;
-
-    (async () => {
-      unlistenOutput = await listenExecutionOutput((line) => appendOutput(line));
-      unlistenDone = await listenExecutionDone(() => setIsRunning(false));
-    })();
-
-    return () => {
-      unlistenOutput?.();
-      unlistenDone?.();
-    };
-  }, [appendOutput, setIsRunning]);
 
   const run = useCallback(
     async (code: string, language: Language) => {
