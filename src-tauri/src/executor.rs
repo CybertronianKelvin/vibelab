@@ -32,7 +32,7 @@ fn find_node_path() -> Result<String, String> {
         }
     }
 
-    let home = std::env::var("HOME").unwrap_or_default();
+    let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/"));
     let nvm_dirs = vec![
         format!("{}/.nvm/versions/node", home),
         format!(
@@ -141,8 +141,8 @@ pub async fn execute_code(
         .spawn()
         .map_err(|e| format!("Failed to start Node.js: {}", e))?;
 
-    let stdout = child.stdout.take().unwrap();
-    let stderr = child.stderr.take().unwrap();
+    let stdout = child.stdout.take().ok_or("Failed to capture stdout")?;
+    let stderr = child.stderr.take().ok_or("Failed to capture stderr")?;
 
     let app_out = app.clone();
     let out_task = tokio::spawn(async move {

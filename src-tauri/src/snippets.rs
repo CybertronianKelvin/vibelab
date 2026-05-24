@@ -69,7 +69,8 @@ pub fn get_snippets() -> Result<Vec<Snippet>, String> {
 }
 
 #[tauri::command]
-pub fn save_snippet(mut snippet: Snippet) -> Result<Snippet, String> {
+pub fn save_snippet(snippet: Snippet) -> Result<Snippet, String> {
+    let mut snippet = snippet;
     let conn = open_db()?;
     let now = now_iso();
     if snippet.id.is_empty() {
