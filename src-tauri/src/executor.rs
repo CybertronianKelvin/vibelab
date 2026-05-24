@@ -16,41 +16,44 @@ pub struct ExecutionDone {
     pub exit_code: Option<i32>,
 }
 
-fn find_node_path() -> Result<String, String> {
+fn find_binary(cmd_name: &str, fixed_paths: &[&str]) -> Result<String, String> {
     let output = std::process::Command::new("sh")
         .arg("-c")
-        .arg("which node 2>/dev/null || command -v node 2>/dev/null")
+        .arg(format!("which {0} 2>/dev/null || command -v {0} 2>/dev/null", cmd_name))
         .output()
         .map_err(|e| e.to_string())?;
 
     if output.status.success() {
-        let path = String::from_utf8_lossy(&output.stdout)
-            .trim()
-            .to_string();
+        let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
         if !path.is_empty() && std::path::Path::new(&path).exists() {
             return Ok(path);
         }
     }
 
+    for path in fixed_paths {
+        if std::path::Path::new(path).exists() {
+            return Ok(path.to_string());
+        }
+    }
+
+    Err(format!("{} not found. Install it or set the path in Settings.", cmd_name))
+}
+
+fn find_node_path() -> Result<String, String> {
     let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/"));
-    let nvm_dirs = vec![
+    let nvm_dirs = [
         format!("{}/.nvm/versions/node", home),
-        format!(
-            "{}/Library/Application Support/Herd/config/nvm/versions/node",
-            home
-        ),
+        format!("{}/Library/Application Support/Herd/config/nvm/versions/node", home),
     ];
 
     let fixed = [
-        "/usr/local/bin/node".to_string(),
-        "/opt/homebrew/bin/node".to_string(),
-        "/usr/bin/node".to_string(),
+        "/usr/local/bin/node",
+        "/opt/homebrew/bin/node",
+        "/usr/bin/node",
     ];
 
-    for path in &fixed {
-        if std::path::Path::new(path).exists() {
-            return Ok(path.clone());
-        }
+    if let Ok(path) = find_binary("node", &fixed) {
+        return Ok(path);
     }
 
     for dir in &nvm_dirs {
@@ -70,10 +73,12 @@ fn find_node_path() -> Result<String, String> {
         }
     }
 
-    Err(
-        "Node.js not found. Set the path in Settings or install from https://nodejs.org"
-            .to_string(),
-    )
+    Err("Node.js not found. Set the path in Settings or install from https://nodejs.org".to_string())
+}
+
+fn find_php_path() -> Result<String, String> {
+    find_binary("php", &["/usr/bin/php", "/usr/local/bin/php", "/opt/homebrew/bin/php"])
+        .map_err(|_| "PHP not found. Install PHP or set the path in Settings.".to_string())
 }
 
 fn workspace_dir() -> Result<PathBuf, String> {
@@ -98,19 +103,75 @@ fn now_ms() -> i64 {
         .as_millis() as i64
 }
 
-#[tauri::command]
-pub async fn execute_code(
+async fn stream_process(
+    app: AppHandle,
+    cmd: String,
+    args: Vec<String>,
+    env_vars: Vec<(String, String)>,
+    cwd: PathBuf,
+) -> Result<(), String> {
+    let mut command = Command::new(&cmd);
+    command.args(&args).current_dir(&cwd)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    for (k, v) in env_vars {
+        command.env(k, v);
+    }
+
+    let mut child = command
+        .spawn()
+        .map_err(|e| format!("Failed to start {}: {}", cmd, e))?;
+
+    let stdout = child.stdout.take().ok_or("Failed to capture stdout")?;
+    let stderr = child.stderr.take().ok_or("Failed to capture stderr")?;
+
+    let app_out = app.clone();
+    let out_task = tokio::spawn(async move {
+        let mut lines = BufReader::new(stdout).lines();
+        while let Ok(Some(line)) = lines.next_line().await {
+            let _ = app_out.emit("execution-output", ExecutionLine {
+                output_type: "stdout".into(),
+                content: line,
+                timestamp: now_ms(),
+            });
+        }
+    });
+
+    let app_err = app.clone();
+    let err_task = tokio::spawn(async move {
+        let mut lines = BufReader::new(stderr).lines();
+        while let Ok(Some(line)) = lines.next_line().await {
+            let _ = app_err.emit("execution-output", ExecutionLine {
+                output_type: "stderr".into(),
+                content: line,
+                timestamp: now_ms(),
+            });
+        }
+    });
+
+    let status = child.wait().await.map_err(|e| e.to_string())?;
+    let _ = tokio::join!(out_task, err_task);
+
+    app.emit("execution-done", ExecutionDone { exit_code: status.code() })
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+async fn execute_node_code(
     app: AppHandle,
     code: String,
     language: String,
     node_path: Option<String>,
+    project_path: Option<String>,
 ) -> Result<(), String> {
-    let node_path = match node_path.as_deref() {
+    let node_bin = match node_path.as_deref() {
         Some(p) if !p.is_empty() && std::path::Path::new(p).exists() => p.to_string(),
         _ => find_node_path()?,
     };
-    let workspace = workspace_dir()?;
 
+    let workspace = workspace_dir()?;
     let suffix = if language == "ts" { ".ts" } else { ".mjs" };
     let temp = tempfile::Builder::new()
         .suffix(suffix)
@@ -125,64 +186,96 @@ pub async fn execute_code(
 
     let tsx_bin = workspace.join("node_modules").join(".bin").join("tsx");
     let (cmd, args): (String, Vec<String>) = if language == "ts" && tsx_bin.exists() {
-        (
-            tsx_bin.to_string_lossy().to_string(),
-            vec![temp_path.to_string_lossy().to_string()],
-        )
+        (tsx_bin.to_string_lossy().to_string(), vec![temp_path.to_string_lossy().to_string()])
     } else {
-        (
-            node_path,
-            vec![temp_path.to_string_lossy().to_string()],
-        )
+        (node_bin, vec![temp_path.to_string_lossy().to_string()])
     };
 
-    let mut child = Command::new(&cmd)
-        .args(&args)
-        .env("NODE_PATH", workspace.join("node_modules"))
-        .current_dir(&workspace)
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("Failed to start Node.js: {}", e))?;
+    let cwd = project_path.as_deref()
+        .map(std::path::Path::new)
+        .filter(|p| p.is_dir())
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(|| workspace.clone());
 
-    let stdout = child.stdout.take().ok_or("Failed to capture stdout")?;
-    let stderr = child.stderr.take().ok_or("Failed to capture stderr")?;
-
-    let app_out = app.clone();
-    let out_task = tokio::spawn(async move {
-        let mut lines = BufReader::new(stdout).lines();
-        while let Ok(Some(line)) = lines.next_line().await {
-            let _ = app_out.emit(
-                "execution-output",
-                ExecutionLine {
-                    output_type: "stdout".into(),
-                    content: line,
-                    timestamp: now_ms(),
-                },
-            );
+    let mut node_path_entries = vec![workspace.join("node_modules").to_string_lossy().to_string()];
+    if let Some(ref proj) = project_path {
+        let proj_modules = std::path::Path::new(proj).join("node_modules");
+        if proj_modules.is_dir() {
+            node_path_entries.insert(0, proj_modules.to_string_lossy().to_string());
         }
-    });
+    }
 
-    let app_err = app.clone();
-    let err_task = tokio::spawn(async move {
-        let mut lines = BufReader::new(stderr).lines();
-        while let Ok(Some(line)) = lines.next_line().await {
-            let _ = app_err.emit(
-                "execution-output",
-                ExecutionLine {
-                    output_type: "stderr".into(),
-                    content: line,
-                    timestamp: now_ms(),
-                },
-            );
-        }
-    });
+    stream_process(app, cmd, args, vec![("NODE_PATH".into(), node_path_entries.join(":"))], cwd).await
+}
 
-    let status = child.wait().await.map_err(|e| e.to_string())?;
-    let _ = tokio::join!(out_task, err_task);
+async fn execute_php_code(
+    app: AppHandle,
+    code: String,
+    php_path: Option<String>,
+    project_path: Option<String>,
+) -> Result<(), String> {
+    let php_bin = match php_path.as_deref() {
+        Some(p) if !p.is_empty() && std::path::Path::new(p).exists() => p.to_string(),
+        _ => find_php_path()?,
+    };
 
-    app.emit("execution-done", ExecutionDone { exit_code: status.code() })
+    let full_code = build_php_code(&code, project_path.as_deref());
+
+    let temp = tempfile::Builder::new()
+        .suffix(".php")
+        .tempfile()
         .map_err(|e| e.to_string())?;
+    std::fs::write(temp.path(), full_code).map_err(|e| e.to_string())?;
 
-    Ok(())
+    let cwd = project_path.as_deref()
+        .map(std::path::Path::new)
+        .filter(|p| p.is_dir())
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(std::env::temp_dir);
+
+    stream_process(app, php_bin, vec![temp.path().to_string_lossy().to_string()], vec![], cwd).await
+}
+
+fn build_php_code(code: &str, project_path: Option<&str>) -> String {
+    let Some(proj) = project_path else {
+        return format!("<?php\n{}", code);
+    };
+
+    let proj_path = std::path::Path::new(proj);
+    let autoload = proj_path.join("vendor").join("autoload.php");
+
+    if !autoload.exists() {
+        return format!("<?php\n{}", code);
+    }
+
+    let autoload_str = autoload.to_string_lossy();
+    let is_laravel = proj_path.join("artisan").exists();
+
+    if is_laravel {
+        let bootstrap = proj_path.join("bootstrap").join("app.php");
+        format!(
+            "<?php\ndefine('LARAVEL_START', microtime(true));\nrequire '{}';\n$app = require_once '{}';\n$kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);\n$kernel->bootstrap();\n\n{}",
+            autoload_str,
+            bootstrap.to_string_lossy(),
+            code
+        )
+    } else {
+        format!("<?php\nrequire '{}';\n\n{}", autoload_str, code)
+    }
+}
+
+#[tauri::command]
+pub async fn execute_code(
+    app: AppHandle,
+    code: String,
+    language: String,
+    node_path: Option<String>,
+    php_path: Option<String>,
+    project_path: Option<String>,
+) -> Result<(), String> {
+    if language == "php" {
+        execute_php_code(app, code, php_path, project_path).await
+    } else {
+        execute_node_code(app, code, language, node_path, project_path).await
+    }
 }

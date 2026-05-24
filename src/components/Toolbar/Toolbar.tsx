@@ -1,5 +1,6 @@
 import { useStore } from "../../store";
-import type { Language } from "../../types";
+import { tauriClient } from "../../lib/tauri";
+import type { Language, ProjectType } from "../../types";
 
 interface Props { onRun: (code?: string, lang?: Language) => void }
 
@@ -17,16 +18,44 @@ const IconLayoutBelow = () => (
   </svg>
 );
 
+const PROJECT_TYPE_LABEL: Record<ProjectType, string> = {
+  laravel: "Laravel",
+  node: "Node",
+  php: "PHP",
+  unknown: "Project",
+};
+
+function projectBadge(type: ProjectType) {
+  if (type === "laravel") return "bg-red-900/50 text-red-300";
+  if (type === "node") return "bg-emerald-900/50 text-emerald-300";
+  if (type === "php") return "bg-blue-900/50 text-blue-300";
+  return "bg-surface-600 text-gray-400";
+}
+
 export function Toolbar({ onRun }: Props) {
   const {
     language, setLanguage, isRunning, settings,
-    consoleLayout,
+    consoleLayout, project, setProject,
     toggleSidebar, togglePackages, toggleSettings, toggleConsoleLayout,
   } = useStore();
 
+  const handleLinkProject = async () => {
+    const path = await tauriClient.selectDirectory();
+    if (!path) return;
+    const type = await detectProjectType(path);
+    setProject({ path, type });
+  };
+
+  const handleUnlinkProject = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setProject(null);
+  };
+
+  const projectName = project ? project.path.split("/").pop() ?? project.path : null;
+
   return (
     <header className="flex items-center gap-2 px-4 py-2 border-b border-surface-600 bg-surface-800 shrink-0">
-      <span className="text-base font-bold text-violet-400 mr-1 select-none">LexJS</span>
+      <span className="text-base font-bold text-emerald-400 mr-1 select-none">LexJS</span>
 
       <button
         onClick={toggleSidebar}
@@ -37,13 +66,13 @@ export function Toolbar({ onRun }: Props) {
       </button>
 
       <div className="flex rounded overflow-hidden border border-surface-600 text-xs">
-        {(["js", "ts"] as Language[]).map((lang) => (
+        {(["js", "ts", "php"] as Language[]).map((lang) => (
           <button
             key={lang}
             onClick={() => setLanguage(lang)}
             className={`px-3 py-1 font-mono font-semibold transition-colors ${
               language === lang
-                ? "bg-violet-500 text-white"
+                ? "bg-emerald-500 text-white"
                 : "text-gray-400 hover:text-gray-200 hover:bg-surface-600"
             }`}
           >
@@ -54,12 +83,39 @@ export function Toolbar({ onRun }: Props) {
 
       <span className="text-xs text-gray-600">{settings.autoRun ? "auto" : "manual"}</span>
 
+      {/* Project linker */}
+      {project ? (
+        <div className="flex items-center gap-1.5">
+          <span className={`text-xs px-2 py-0.5 rounded font-mono ${projectBadge(project.type)}`}>
+            {PROJECT_TYPE_LABEL[project.type]}
+          </span>
+          <span className="text-xs text-gray-300 max-w-[120px] truncate" title={project.path}>
+            {projectName}
+          </span>
+          <button
+            onClick={handleUnlinkProject}
+            className="text-gray-500 hover:text-red-400 text-xs"
+            title="Unlink project"
+          >
+            ×
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={handleLinkProject}
+          className="px-2 py-1 rounded text-xs text-gray-400 hover:text-gray-200 hover:bg-surface-600"
+          title="Link a project folder (Node, Laravel, PHP)"
+        >
+          Link Project
+        </button>
+      )}
+
       <div className="flex-1" />
 
       <button
         onClick={toggleConsoleLayout}
         className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-surface-600 transition-colors"
-        title={consoleLayout === "side" ? "Move console below editor" : "Move console to right side"}
+        title={consoleLayout === "side" ? "Move output below editor" : "Move output to right side"}
       >
         {consoleLayout === "side" ? <IconLayoutBelow /> : <IconLayoutSide />}
       </button>
@@ -67,7 +123,7 @@ export function Toolbar({ onRun }: Props) {
       <button
         onClick={() => onRun()}
         disabled={isRunning}
-        className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-violet-500 hover:bg-violet-400 disabled:opacity-50 text-white text-sm font-semibold transition-colors"
+        className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white text-sm font-semibold transition-colors"
         title="Run (Cmd+R or Cmd+Enter)"
       >
         {isRunning ? "Running…" : "▶ Run"}
@@ -92,4 +148,15 @@ export function Toolbar({ onRun }: Props) {
       </button>
     </header>
   );
+}
+
+async function detectProjectType(path: string): Promise<import("../../types").ProjectType> {
+  const { exists } = await import("@tauri-apps/plugin-fs");
+  const artisan = await exists(path + "/artisan").catch(() => false);
+  if (artisan) return "laravel";
+  const pkgJson = await exists(path + "/package.json").catch(() => false);
+  if (pkgJson) return "node";
+  const composerJson = await exists(path + "/composer.json").catch(() => false);
+  if (composerJson) return "php";
+  return "unknown";
 }

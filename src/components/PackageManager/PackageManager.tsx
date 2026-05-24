@@ -117,7 +117,7 @@ export function PackageManager() {
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <input
-                  className="w-full bg-surface-700 border border-surface-500 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-violet-500"
+                  className="w-full bg-surface-700 border border-surface-500 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-emerald-500"
                   placeholder="Search npm (e.g. lodash, axios, dayjs)"
                   value={query}
                   onChange={(e) => handleQueryChange(e.target.value)}
@@ -137,7 +137,7 @@ export function PackageManager() {
               <button
                 onClick={() => handleInstall()}
                 disabled={loading || !query.trim()}
-                className="px-4 py-2 bg-violet-500 hover:bg-violet-400 disabled:opacity-40 text-white text-sm font-semibold rounded whitespace-nowrap"
+                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-white text-sm font-semibold rounded whitespace-nowrap"
               >
                 Install
               </button>
@@ -161,7 +161,7 @@ export function PackageManager() {
                         <p className="text-xs text-gray-500 truncate mt-0.5">{pkg.description}</p>
                       )}
                     </div>
-                    <span className="text-xs text-violet-400 shrink-0 mt-0.5">install ↵</span>
+                    <span className="text-xs text-emerald-400 shrink-0 mt-0.5">install ↵</span>
                   </button>
                 ))}
               </div>

@@ -3,7 +3,7 @@ import { useStore } from "../../store";
 import type { ExecutionLine } from "../../types";
 
 function Line({ line }: { line: ExecutionLine }) {
-  const colors = { stdout: "text-gray-200", stderr: "text-red-400", info: "text-violet-400" };
+  const colors = { stdout: "text-gray-200", stderr: "text-red-400", info: "text-emerald-400" };
   const prefix = { stdout: "", stderr: "✖ ", info: "ℹ " };
   return (
     <div className={`font-mono text-sm leading-relaxed px-4 py-0.5 whitespace-pre-wrap break-words ${colors[line.output_type]}`}>
@@ -25,8 +25,8 @@ export function Console() {
     <div className="flex flex-col h-full bg-surface-900">
       <div className="flex items-center justify-between px-4 py-2 border-b border-surface-600 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Console</span>
-          {isRunning && <span className="text-xs text-violet-400 animate-pulse">● Running</span>}
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Output</span>
+          {isRunning && <span className="text-xs text-emerald-400 animate-pulse">● Running</span>}
         </div>
         <button onClick={clearOutput} className="text-xs text-gray-500 hover:text-gray-300">Clear</button>
       </div>

@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { open } from "@tauri-apps/plugin-dialog";
 import type {
   ExecutionDone,
   ExecutionLine,
@@ -10,8 +11,20 @@ import type {
 } from "../types";
 
 export const tauriClient = {
-  executeCode: (code: string, language: Language, nodePath?: string | null): Promise<void> =>
-    invoke("execute_code", { code, language, nodePath: nodePath ?? null }),
+  executeCode: (
+    code: string,
+    language: Language,
+    nodePath?: string | null,
+    phpPath?: string | null,
+    projectPath?: string | null,
+  ): Promise<void> =>
+    invoke("execute_code", {
+      code,
+      language,
+      nodePath: nodePath ?? null,
+      phpPath: phpPath ?? null,
+      projectPath: projectPath ?? null,
+    }),
 
   installPackage: (name: string): Promise<string> =>
     invoke("install_package", { name }),
@@ -33,6 +46,11 @@ export const tauriClient = {
 
   saveSettings: (settings: Settings): Promise<void> =>
     invoke("save_settings", { settings }),
+
+  selectDirectory: async (): Promise<string | null> => {
+    const result = await open({ directory: true, multiple: false, title: "Select Project Directory" });
+    return typeof result === "string" ? result : null;
+  },
 };
 
 export const listenExecutionOutput = (

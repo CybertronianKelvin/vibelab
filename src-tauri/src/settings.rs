@@ -15,6 +15,8 @@ pub struct Settings {
     pub env_vars: HashMap<String, String>,
     #[serde(rename = "nodePath")]
     pub node_path: Option<String>,
+    #[serde(rename = "phpPath", default)]
+    pub php_path: Option<String>,
 }
 
 impl Default for Settings {
@@ -26,6 +28,7 @@ impl Default for Settings {
             auto_run_delay: 500,
             env_vars: HashMap::new(),
             node_path: None,
+            php_path: None,
         }
     }
 }
@@ -67,6 +70,7 @@ mod tests {
         assert_eq!(s.auto_run_delay, 500);
         assert!(s.env_vars.is_empty());
         assert!(s.node_path.is_none());
+        assert!(s.php_path.is_none());
     }
 
     #[test]
@@ -78,6 +82,7 @@ mod tests {
         assert!(json.contains("\"autoRunDelay\""));
         assert!(json.contains("\"envVars\""));
         assert!(json.contains("\"nodePath\""));
+        assert!(json.contains("\"phpPath\""));
     }
 
     #[test]
@@ -89,6 +94,7 @@ mod tests {
             auto_run_delay: 1000,
             env_vars: std::collections::HashMap::new(),
             node_path: Some("/usr/local/bin/node".to_string()),
+            php_path: Some("/usr/bin/php".to_string()),
         };
         let json = serde_json::to_string(&original).unwrap();
         let restored: Settings = serde_json::from_str(&json).unwrap();
@@ -97,5 +103,6 @@ mod tests {
         assert!(!restored.auto_run);
         assert_eq!(restored.auto_run_delay, 1000);
         assert_eq!(restored.node_path, Some("/usr/local/bin/node".to_string()));
+        assert_eq!(restored.php_path, Some("/usr/bin/php".to_string()));
     }
 }

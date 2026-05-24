@@ -4,7 +4,7 @@ import { useStore } from "../store";
 import type { Language } from "../types";
 
 export function useExecution() {
-  const { appendOutput, clearOutput, setIsRunning, settings } = useStore();
+  const { appendOutput, clearOutput, setIsRunning, settings, project } = useStore();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const run = useCallback(
@@ -12,13 +12,13 @@ export function useExecution() {
       clearOutput();
       setIsRunning(true);
       try {
-        await tauriClient.executeCode(code, language, settings.nodePath);
+        await tauriClient.executeCode(code, language, settings.nodePath, settings.phpPath, project?.path ?? null);
       } catch (err) {
         appendOutput({ output_type: "stderr", content: String(err), timestamp: Date.now() });
         setIsRunning(false);
       }
     },
-    [clearOutput, setIsRunning, appendOutput]
+    [clearOutput, setIsRunning, appendOutput, settings.nodePath, settings.phpPath, project]
   );
 
   const scheduleAutoRun = useCallback(

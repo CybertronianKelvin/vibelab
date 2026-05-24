@@ -35,12 +35,12 @@ export function ResizeHandle({ direction, onResize }: Props) {
       onPointerUp={handlePointerUp}
       className={`shrink-0 flex items-center justify-center group transition-colors z-10
         ${isH
-          ? "w-1.5 cursor-col-resize hover:bg-violet-500/30 dark:bg-surface-600 bg-gray-200"
-          : "h-1.5 cursor-row-resize hover:bg-violet-500/30 dark:bg-surface-600 bg-gray-200"
+          ? "w-1.5 cursor-col-resize hover:bg-emerald-500/30 dark:bg-surface-600 bg-gray-200"
+          : "h-1.5 cursor-row-resize hover:bg-emerald-500/30 dark:bg-surface-600 bg-gray-200"
         }`}
     >
       <div
-        className={`rounded-full bg-gray-500 group-hover:bg-violet-400 transition-colors
+        className={`rounded-full bg-gray-500 group-hover:bg-emerald-400 transition-colors
           ${isH ? "w-0.5 h-6" : "h-0.5 w-6"}`}
       />
     </div>

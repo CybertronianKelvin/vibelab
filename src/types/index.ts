@@ -12,7 +12,7 @@ export interface Snippet {
   id: string;
   name: string;
   code: string;
-  language: "js" | "ts";
+  language: "js" | "ts" | "php";
   createdAt: string;
   updatedAt: string;
 }
@@ -29,6 +29,14 @@ export interface Settings {
   autoRunDelay: number;
   envVars: Record<string, string>;
   nodePath: string | null;
+  phpPath: string | null;
 }
 
-export type Language = "js" | "ts";
+export type Language = "js" | "ts" | "php";
+
+export type ProjectType = "node" | "laravel" | "php" | "unknown";
+
+export interface ProjectContext {
+  path: string;
+  type: ProjectType;
+}

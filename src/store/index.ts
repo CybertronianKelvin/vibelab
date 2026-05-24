@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { ExecutionLine, Language, Package, Settings, Snippet } from "../types";
+import type { ExecutionLine, Language, Package, ProjectContext, Settings, Snippet } from "../types";
 
 const DEFAULT_CODE = '// Welcome to LexJS\nconsole.log("Hello, World!");\n';
 
@@ -10,6 +10,7 @@ const DEFAULT_SETTINGS: Settings = {
   autoRunDelay: 500,
   envVars: {},
   nodePath: null,
+  phpPath: null,
 };
 
 interface AppState {
@@ -34,6 +35,9 @@ interface AppState {
 
   settings: Settings;
   setSettings: (s: Settings) => void;
+
+  project: ProjectContext | null;
+  setProject: (p: ProjectContext | null) => void;
 
   sidebarOpen: boolean;
   packagesOpen: boolean;
@@ -73,6 +77,9 @@ export const useStore = create<AppState>((set) => ({
 
   settings: DEFAULT_SETTINGS,
   setSettings: (settings) => set({ settings }),
+
+  project: null,
+  setProject: (project) => set({ project }),
 
   sidebarOpen: true,
   packagesOpen: false,
