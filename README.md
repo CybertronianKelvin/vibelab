@@ -2,6 +2,8 @@
 
 > A local JavaScript / TypeScript / PHP scratchpad with a built-in AI assistant — no browser, no cloud, runs entirely on your machine.
 
+**[vibelab.cybertroniankelvin.github.io](https://cybertroniankelvin.github.io/vibelab/)** · [Releases](https://github.com/CybertronianKelvin/vibelab/releases)
+
 ![VibeLab screenshot](docs/screenshot.png)
 
 ---
