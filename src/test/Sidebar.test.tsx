@@ -62,7 +62,7 @@ describe("Sidebar", () => {
   it("save button is enabled when name is typed", async () => {
     const user = userEvent.setup();
     render(<Sidebar />);
-    await user.type(screen.getByPlaceholderText("Name..."), "My Snippet");
+    await user.type(screen.getByPlaceholderText("Snippet name…"), "My Snippet");
     expect(screen.getByText("+")).not.toBeDisabled();
   });
 });

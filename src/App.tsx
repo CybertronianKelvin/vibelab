@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Console } from "./components/Console/Console";
 import { Editor } from "./components/Editor/Editor";
 import { PackageManager } from "./components/PackageManager/PackageManager";
-import { Preview } from "./components/Preview/Preview";
 import { ResizeHandle } from "./components/ResizeHandle/ResizeHandle";
 import { SettingsPanel } from "./components/Settings/Settings";
 import { Sidebar } from "./components/Sidebar/Sidebar";
@@ -21,7 +20,7 @@ const EDITOR_MIN_PCT = 25;
 export default function App() {
   const {
     code, language,
-    sidebarOpen, packagesOpen, settingsOpen, previewOpen, consoleLayout,
+    sidebarOpen, packagesOpen, settingsOpen, consoleLayout,
     clearOutput,
   } = useStore();
   const { run } = useExecution();
@@ -95,15 +94,6 @@ export default function App() {
             <div className="overflow-hidden" style={{ flex: `${consolePct} 1 0%`, minWidth: `${CONSOLE_MIN_PCT}%` }}>
               <Console />
             </div>
-
-            {previewOpen && (
-              <>
-                <ResizeHandle direction="horizontal" onResize={(d) => handleHorizontalResize(-d)} />
-                <div className="w-[30%] overflow-hidden shrink-0">
-                  <Preview />
-                </div>
-              </>
-            )}
           </>
         ) : (
           <div className="flex flex-col flex-1 overflow-hidden min-w-0">
@@ -116,15 +106,6 @@ export default function App() {
             <div className="overflow-hidden" style={{ flex: `${consolePct} 1 0%`, minHeight: `${CONSOLE_MIN_PCT}%` }}>
               <Console />
             </div>
-
-            {previewOpen && (
-              <>
-                <ResizeHandle direction="vertical" onResize={(d) => handleVerticalResize(-d)} />
-                <div className="overflow-hidden shrink-0 h-1/3">
-                  <Preview />
-                </div>
-              </>
-            )}
           </div>
         )}
       </div>

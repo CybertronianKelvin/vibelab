@@ -21,12 +21,12 @@ export function Toolbar({ onRun }: Props) {
   const {
     language, setLanguage, isRunning, settings,
     consoleLayout,
-    toggleSidebar, togglePackages, toggleSettings, togglePreview, toggleConsoleLayout,
+    toggleSidebar, togglePackages, toggleSettings, toggleConsoleLayout,
   } = useStore();
 
   return (
     <header className="flex items-center gap-2 px-4 py-2 border-b border-surface-600 bg-surface-800 shrink-0">
-      <span className="text-base font-bold text-amber-400 mr-1 select-none">LexJS</span>
+      <span className="text-base font-bold text-violet-400 mr-1 select-none">LexJS</span>
 
       <button
         onClick={toggleSidebar}
@@ -43,7 +43,7 @@ export function Toolbar({ onRun }: Props) {
             onClick={() => setLanguage(lang)}
             className={`px-3 py-1 font-mono font-semibold transition-colors ${
               language === lang
-                ? "bg-amber-500 text-gray-900"
+                ? "bg-violet-500 text-white"
                 : "text-gray-400 hover:text-gray-200 hover:bg-surface-600"
             }`}
           >
@@ -67,19 +67,12 @@ export function Toolbar({ onRun }: Props) {
       <button
         onClick={() => onRun()}
         disabled={isRunning}
-        className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-gray-900 text-sm font-semibold transition-colors"
+        className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-violet-500 hover:bg-violet-400 disabled:opacity-50 text-white text-sm font-semibold transition-colors"
         title="Run (Cmd+R or Cmd+Enter)"
       >
         {isRunning ? "Running…" : "▶ Run"}
       </button>
 
-      <button
-        onClick={togglePreview}
-        className="px-2 py-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-surface-600 text-sm"
-        title="Preview panel"
-      >
-        Preview
-      </button>
       <button
         onClick={togglePackages}
         className="px-2 py-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-surface-600 text-sm"

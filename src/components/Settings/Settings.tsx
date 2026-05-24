@@ -41,7 +41,7 @@ export function SettingsPanel() {
             <select
               value={local.theme}
               onChange={(e) => update({ theme: e.target.value as "dark" | "light" })}
-              className="bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 outline-none focus:border-amber-500"
+              className="bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 outline-none focus:border-violet-500"
             >
               <option value="dark">Dark</option>
               <option value="light">Light</option>
@@ -81,7 +81,7 @@ export function SettingsPanel() {
                 onChange={(e) =>
                   update({ autoRunDelay: Math.max(100, Number(e.target.value)) })
                 }
-                className="w-24 bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 outline-none focus:border-amber-500"
+                className="w-24 bg-surface-700 border border-surface-500 rounded px-2 py-1 text-sm text-gray-200 outline-none focus:border-violet-500"
               />
             </Row>
           )}
@@ -96,7 +96,7 @@ export function SettingsPanel() {
               value={local.nodePath ?? ""}
               onChange={(e) => update({ nodePath: e.target.value || null })}
               placeholder="/usr/local/bin/node  or  /opt/homebrew/bin/node"
-              className="w-full bg-surface-700 border border-surface-500 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-amber-500 font-mono"
+              className="w-full bg-surface-700 border border-surface-500 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-violet-500 font-mono"
             />
             {local.nodePath && (
               <button
@@ -119,7 +119,7 @@ export function SettingsPanel() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-5 py-2 text-sm font-medium bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-gray-900 font-semibold rounded"
+            className="px-5 py-2 text-sm font-medium bg-violet-500 hover:bg-violet-400 disabled:opacity-50 text-white font-semibold rounded"
           >
             {saving ? "Saving…" : "Save"}
           </button>
@@ -143,7 +143,7 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
     <button
       type="button"
       onClick={() => onChange(!value)}
-      className={`w-10 h-5 rounded-full transition-colors relative ${value ? "bg-amber-500" : "bg-surface-500"}`}
+      className={`w-10 h-5 rounded-full transition-colors relative ${value ? "bg-violet-500" : "bg-surface-500"}`}
     >
       <span
         className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${value ? "translate-x-5" : ""}`}
