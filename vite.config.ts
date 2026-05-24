@@ -14,4 +14,10 @@ export default defineConfig({
     target: "safari13",
     minify: "esbuild",
   },
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
+    exclude: ["**/node_modules/**", "**/src-tauri/**"],
+  },
 });

@@ -104,3 +104,37 @@ pub fn delete_snippet(id: String) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_snippet(id: &str, name: &str) -> Snippet {
+        Snippet {
+            id: id.to_string(),
+            name: name.to_string(),
+            code: "console.log(1)".to_string(),
+            language: "js".to_string(),
+            created_at: "2026-01-01T00:00:00Z".to_string(),
+            updated_at: "2026-01-01T00:00:00Z".to_string(),
+        }
+    }
+
+    #[test]
+    fn snippet_serde_camel_case() {
+        let s = make_snippet("id1", "Test");
+        let json = serde_json::to_string(&s).unwrap();
+        assert!(json.contains("\"createdAt\""));
+        assert!(json.contains("\"updatedAt\""));
+    }
+
+    #[test]
+    fn snippet_round_trip_json() {
+        let original = make_snippet("abc", "Round Trip");
+        let json = serde_json::to_string(&original).unwrap();
+        let restored: Snippet = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.id, "abc");
+        assert_eq!(restored.name, "Round Trip");
+        assert_eq!(restored.language, "js");
+    }
+}

@@ -1,0 +1,15 @@
+import "@testing-library/jest-dom";
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: vi.fn(),
+}));
+
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: vi.fn(() => Promise.resolve(() => {})),
+  emit: vi.fn(),
+}));
+
+vi.mock("@monaco-editor/react", () => ({ default: () => null }));
+
+// jsdom does not implement scrollIntoView
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
