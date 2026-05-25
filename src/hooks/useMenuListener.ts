@@ -55,6 +55,7 @@ async function handleAction(
 
   switch (id) {
     // ── File ──────────────────────────────────────────────────────────────
+    case "new-scratch":      window.dispatchEvent(new CustomEvent("vibelab:new-scratch")); break;
     case "new-snippet":      store.toggleSnippetModal(); break;
     case "link-project":     window.dispatchEvent(new CustomEvent("vibelab:link-project")); break;
     case "unlink-project":   window.dispatchEvent(new CustomEvent("vibelab:unlink-project")); break;

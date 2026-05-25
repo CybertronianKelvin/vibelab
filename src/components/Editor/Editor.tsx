@@ -1,6 +1,7 @@
 import MonacoEditor, { type OnMount } from "@monaco-editor/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useExecution } from "../../hooks/useExecution";
+import { useSnippets } from "../../hooks/useSnippets";
 import { tauriClient } from "../../lib/tauri";
 import { useStore } from "../../store";
 import type { Language } from "../../types";
@@ -211,12 +212,16 @@ interface Props {
 const LANG_LABEL: Record<Language, string> = { js: "JavaScript", ts: "TypeScript", php: "PHP" };
 
 export function Editor({ onRun }: Props) {
-  const { code, language, setCode, setActiveSnippetId, clearOutput, settings } = useStore();
+  const { code, language, setCode, setActiveSnippetId, clearOutput, settings, activeSnippetId, snippets, toggleSnippetModal } = useStore();
   const { scheduleAutoRun, cancelAutoRun } = useExecution();
+  const { saveSnippet } = useSnippets();
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
   const [formatting, setFormatting] = useState(false);
   const [formatError, setFormatError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [editorAtBottom, setEditorAtBottom] = useState(true);
+  const [editorAtTop, setEditorAtTop] = useState(true);
 
   const theme = settings.theme === "dark" ? "vibelab-dark" : "vibelab-light";
 
@@ -235,6 +240,12 @@ export function Editor({ onRun }: Props) {
       monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF,
       () => editor.getAction("editor.action.formatDocument")?.run()
     );
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      handleSaveRef.current().catch(() => {});
+    });
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyN, () => {
+      handleNewRef.current();
+    });
     // Toggle find: addAction overrides Monaco's built-in Cmd+F keybinding
     editor.addAction({
       id: "vibelab.toggleFind",
@@ -249,6 +260,14 @@ export function Editor({ onRun }: Props) {
           editor.trigger("keyboard", "actions.find", null);
         }
       },
+    });
+
+    editor.onDidScrollChange(() => {
+      const scrollTop = editor.getScrollTop();
+      const scrollHeight = editor.getScrollHeight();
+      const height = editor.getLayoutInfo().height;
+      setEditorAtTop(scrollTop < 50);
+      setEditorAtBottom(scrollHeight - scrollTop - height < 50);
     });
 
     const domNode = editor.getDomNode();
@@ -296,6 +315,34 @@ export function Editor({ onRun }: Props) {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const handleNew = useCallback(() => {
+    cancelAutoRun();
+    clearOutput();
+    setCode("");
+    setActiveSnippetId(null);
+    setFormatError(null);
+    setSaved(false);
+  }, [cancelAutoRun, clearOutput, setCode, setActiveSnippetId]);
+
+  const handleNewRef = useRef(handleNew);
+  useEffect(() => { handleNewRef.current = handleNew; }, [handleNew]);
+
+  const handleSave = useCallback(async () => {
+    if (!activeSnippetId) {
+      toggleSnippetModal();
+      return;
+    }
+    const snippet = snippets.find((s) => s.id === activeSnippetId);
+    if (!snippet) return;
+    await saveSnippet({ ...snippet, code, language });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  }, [activeSnippetId, snippets, code, language, saveSnippet, toggleSnippetModal]);
+
+  // Stable ref so the Cmd+S Monaco command always calls the latest handleSave
+  const handleSaveRef = useRef(handleSave);
+  useEffect(() => { handleSaveRef.current = handleSave; }, [handleSave]);
+
   const handleFormat = async () => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -315,13 +362,16 @@ export function Editor({ onRun }: Props) {
     const onFormat = () => { handleFormat().catch(() => {}); };
     const onClear  = () => { handleClear(); };
     const onCopy   = () => { handleCopy().catch(() => {}); };
+    const onNew    = () => { handleNew(); };
     window.addEventListener("vibelab:format",       onFormat);
     window.addEventListener("vibelab:clear-editor", onClear);
     window.addEventListener("vibelab:copy-code",    onCopy);
+    window.addEventListener("vibelab:new-scratch",  onNew);
     return () => {
       window.removeEventListener("vibelab:format",       onFormat);
       window.removeEventListener("vibelab:clear-editor", onClear);
       window.removeEventListener("vibelab:copy-code",    onCopy);
+      window.removeEventListener("vibelab:new-scratch",  onNew);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -337,6 +387,21 @@ export function Editor({ onRun }: Props) {
               {formatError}
             </span>
           )}
+          <button
+            onClick={handleNew}
+            className="text-xs text-gray-500 hover:text-gray-300"
+            title="New scratch pad (Cmd+N)"
+          >
+            New
+          </button>
+          <button
+            onClick={() => handleSave().catch(() => {})}
+            disabled={!code.trim()}
+            className="text-xs font-semibold text-brand-400 hover:text-brand-300 disabled:opacity-30"
+            title={activeSnippetId ? "Update snippet (Cmd+S)" : "Save as snippet (Cmd+S)"}
+          >
+            {saved ? "Saved ✓" : "Save"}
+          </button>
           <button
             onClick={handleCopy}
             disabled={!code.trim()}
@@ -362,30 +427,61 @@ export function Editor({ onRun }: Props) {
           </button>
         </div>
       </div>
-      <MonacoEditor
-        height="100%"
-        language={language === "ts" ? "typescript" : language === "php" ? "php" : "javascript"}
-        value={code}
-        theme={theme}
-        onChange={handleChange}
-        onMount={handleMount}
-        options={{
-          fontSize: settings.fontSize,
-          fontFamily: "JetBrains Mono, Fira Code, monospace",
-          minimap: { enabled: false },
-          scrollBeyondLastLine: false,
-          lineNumbers: "on",
-          wordWrap: "on",
-          automaticLayout: true,
-          tabSize: 2,
-          padding: { top: 12 },
-          smoothScrolling: true,
-          cursorBlinking: "smooth",
-          folding: true,
-          foldingStrategy: "auto",
-          showFoldingControls: "always",
-        }}
-      />
+      <div className="relative flex-1 min-h-0">
+        <MonacoEditor
+          height="100%"
+          language={language === "ts" ? "typescript" : language === "php" ? "php" : "javascript"}
+          value={code}
+          theme={theme}
+          onChange={handleChange}
+          onMount={handleMount}
+          options={{
+            fontSize: settings.fontSize,
+            fontFamily: "JetBrains Mono, Fira Code, monospace",
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            lineNumbers: "on",
+            wordWrap: "on",
+            automaticLayout: true,
+            tabSize: 2,
+            padding: { top: 12 },
+            smoothScrolling: true,
+            cursorBlinking: "smooth",
+            folding: true,
+            foldingStrategy: "auto",
+            showFoldingControls: "always",
+          }}
+        />
+        <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-1">
+          {!editorAtTop && (
+            <button
+              onClick={() => { editorRef.current?.setScrollTop(0); setEditorAtTop(true); }}
+              className="flex items-center justify-center w-7 h-7 rounded-full bg-surface-700 border border-surface-500 text-gray-400 hover:text-gray-200 hover:bg-surface-600 shadow-lg transition-colors"
+              title="Scroll to top"
+            >
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 4L14 11H2L8 4z"/>
+              </svg>
+            </button>
+          )}
+          {!editorAtBottom && (
+            <button
+              onClick={() => {
+                const editor = editorRef.current;
+                const model = editor?.getModel();
+                if (editor && model) editor.revealLine(model.getLineCount(), 0);
+                setEditorAtBottom(true);
+              }}
+              className="flex items-center justify-center w-7 h-7 rounded-full bg-surface-700 border border-surface-500 text-gray-400 hover:text-gray-200 hover:bg-surface-600 shadow-lg transition-colors"
+              title="Scroll to bottom"
+            >
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 12L2 5h12L8 12z"/>
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

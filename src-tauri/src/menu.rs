@@ -20,14 +20,16 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
 
     // ── File ──────────────────────────────────────────────────────────────
     let file_menu = {
-        let new_snippet = MenuItem::with_id(app, "new-snippet",      "New Snippet",           true, Some("CmdOrCtrl+N"))?;
-        let link        = MenuItem::with_id(app, "link-project",     "Link Project\u{2026}",  true, Some("CmdOrCtrl+O"))?;
-        let unlink      = MenuItem::with_id(app, "unlink-project",   "Unlink Project",        true, None::<&str>)?;
+        let new_scratch = MenuItem::with_id(app, "new-scratch",      "New",                     true, Some("CmdOrCtrl+N"))?;
+        let new_snippet = MenuItem::with_id(app, "new-snippet",      "Save as Snippet\u{2026}", true, None::<&str>)?;
+        let link        = MenuItem::with_id(app, "link-project",     "Link Project\u{2026}",    true, Some("CmdOrCtrl+O"))?;
+        let unlink      = MenuItem::with_id(app, "unlink-project",   "Unlink Project",          true, None::<&str>)?;
         let packages    = MenuItem::with_id(app, "install-packages", "Install npm Package\u{2026}", true, Some("CmdOrCtrl+Shift+P"))?;
-        let settings    = MenuItem::with_id(app, "settings",         "Settings\u{2026}",      true, Some("CmdOrCtrl+,"))?;
+        let settings    = MenuItem::with_id(app, "settings",         "Settings\u{2026}",        true, Some("CmdOrCtrl+,"))?;
         let quit        = PredefinedMenuItem::quit(app, Some("Quit VibeLab"))?;
 
         SubmenuBuilder::new(app, "File")
+            .item(&new_scratch)
             .item(&new_snippet)
             .item(&link)
             .item(&unlink)

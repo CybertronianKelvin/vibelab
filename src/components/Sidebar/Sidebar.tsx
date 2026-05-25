@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useHistory } from "../../hooks/useHistory";
 import { useSnippets } from "../../hooks/useSnippets";
 import { useStore } from "../../store";
-import type { HistoryEntry, Language, Snippet } from "../../types";
+import type { HistoryEntry, Language, ProjectType, Snippet } from "../../types";
 
 interface Props {
   onRun: (code: string, lang: Language) => void;
@@ -38,6 +38,7 @@ export function Sidebar({ onRun }: Props) {
     history,
     searchQuery,
     setSearchQuery,
+    setProject,
   } = useStore();
   const { saveSnippet, deleteSnippet } = useSnippets();
   const { clearHistory } = useHistory();
@@ -60,6 +61,9 @@ export function Sidebar({ onRun }: Props) {
     setCode(s.code);
     setLanguage(s.language as Language);
     setActiveSnippetId(s.id);
+    if (s.projectPath && s.projectType) {
+      setProject({ path: s.projectPath, type: s.projectType as ProjectType });
+    }
   };
 
   const handleRunSnippet = (e: React.MouseEvent, s: Snippet) => {
@@ -79,6 +83,9 @@ export function Sidebar({ onRun }: Props) {
     setCode(h.code);
     setLanguage(h.language);
     setActiveSnippetId(null);
+    if (h.projectPath && h.projectType) {
+      setProject({ path: h.projectPath, type: h.projectType as ProjectType });
+    }
     onRun(h.code, h.language);
   };
 
@@ -97,6 +104,8 @@ export function Sidebar({ onRun }: Props) {
       language: h.language,
       createdAt: "",
       updatedAt: "",
+      projectPath: h.projectPath ?? null,
+      projectType: h.projectType ?? null,
     });
     setSavingHistoryId(null);
     setHistorySnippetName("");

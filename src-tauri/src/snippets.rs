@@ -12,6 +12,10 @@ pub struct Snippet {
     pub created_at: String,
     #[serde(rename = "updatedAt")]
     pub updated_at: String,
+    #[serde(rename = "projectPath", default)]
+    pub project_path: Option<String>,
+    #[serde(rename = "projectType", default)]
+    pub project_type: Option<String>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -21,6 +25,10 @@ pub struct HistoryEntry {
     pub language: String,
     #[serde(rename = "ranAt")]
     pub ran_at: String,
+    #[serde(rename = "projectPath", default)]
+    pub project_path: Option<String>,
+    #[serde(rename = "projectType", default)]
+    pub project_type: Option<String>,
 }
 
 fn db_path() -> Result<PathBuf, String> {
@@ -49,6 +57,11 @@ fn open_db() -> Result<Connection, String> {
         );",
     )
     .map_err(|e| e.to_string())?;
+    // Migrate existing installs — ignore error if column already exists
+    let _ = conn.execute_batch("ALTER TABLE history ADD COLUMN project_path TEXT");
+    let _ = conn.execute_batch("ALTER TABLE history ADD COLUMN project_type TEXT");
+    let _ = conn.execute_batch("ALTER TABLE snippets ADD COLUMN project_path TEXT");
+    let _ = conn.execute_batch("ALTER TABLE snippets ADD COLUMN project_type TEXT");
     Ok(conn)
 }
 
@@ -61,7 +74,7 @@ pub fn get_snippets() -> Result<Vec<Snippet>, String> {
     let conn = open_db()?;
     let mut stmt = conn
         .prepare(
-            "SELECT id, name, code, language, created_at, updated_at
+            "SELECT id, name, code, language, created_at, updated_at, project_path, project_type
              FROM snippets ORDER BY updated_at DESC",
         )
         .map_err(|e| e.to_string())?;
@@ -75,6 +88,8 @@ pub fn get_snippets() -> Result<Vec<Snippet>, String> {
                 language: row.get(3)?,
                 created_at: row.get(4)?,
                 updated_at: row.get(5)?,
+                project_path: row.get(6)?,
+                project_type: row.get(7)?,
             })
         })
         .map_err(|e| e.to_string())?;
@@ -94,18 +109,21 @@ pub fn save_snippet(snippet: Snippet) -> Result<Snippet, String> {
     }
     snippet.updated_at = now;
     conn.execute(
-        "INSERT INTO snippets (id, name, code, language, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+        "INSERT INTO snippets (id, name, code, language, created_at, updated_at, project_path, project_type)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
          ON CONFLICT(id) DO UPDATE SET
            name = excluded.name, code = excluded.code,
-           language = excluded.language, updated_at = excluded.updated_at",
+           language = excluded.language, updated_at = excluded.updated_at,
+           project_path = excluded.project_path, project_type = excluded.project_type",
         params![
             snippet.id,
             snippet.name,
             snippet.code,
             snippet.language,
             snippet.created_at,
-            snippet.updated_at
+            snippet.updated_at,
+            snippet.project_path,
+            snippet.project_type,
         ],
     )
     .map_err(|e| e.to_string())?;
@@ -124,7 +142,7 @@ pub fn delete_snippet(id: String) -> Result<(), String> {
 pub fn get_history(limit: u32) -> Result<Vec<HistoryEntry>, String> {
     let conn = open_db()?;
     let mut stmt = conn
-        .prepare("SELECT id, code, language, ran_at FROM history ORDER BY ran_at DESC LIMIT ?1")
+        .prepare("SELECT id, code, language, ran_at, project_path, project_type FROM history ORDER BY ran_at DESC LIMIT ?1")
         .map_err(|e| e.to_string())?;
     let rows = stmt
         .query_map(params![limit], |row| {
@@ -133,6 +151,8 @@ pub fn get_history(limit: u32) -> Result<Vec<HistoryEntry>, String> {
                 code: row.get(1)?,
                 language: row.get(2)?,
                 ran_at: row.get(3)?,
+                project_path: row.get(4)?,
+                project_type: row.get(5)?,
             })
         })
         .map_err(|e| e.to_string())?;
@@ -147,8 +167,8 @@ pub fn save_history_entry(entry: HistoryEntry, limit: u32) -> Result<HistoryEntr
     entry.id = uuid::Uuid::new_v4().to_string();
     entry.ran_at = now_iso();
     conn.execute(
-        "INSERT INTO history (id, code, language, ran_at) VALUES (?1, ?2, ?3, ?4)",
-        params![entry.id, entry.code, entry.language, entry.ran_at],
+        "INSERT INTO history (id, code, language, ran_at, project_path, project_type) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![entry.id, entry.code, entry.language, entry.ran_at, entry.project_path, entry.project_type],
     )
     .map_err(|e| e.to_string())?;
     conn.execute(

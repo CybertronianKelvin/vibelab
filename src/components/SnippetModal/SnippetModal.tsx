@@ -3,7 +3,7 @@ import { useSnippets } from "../../hooks/useSnippets";
 import { useStore } from "../../store";
 
 export function SnippetModal() {
-  const { code, language, setCode, setActiveSnippetId, toggleSnippetModal } = useStore();
+  const { code, language, project, setCode, setActiveSnippetId, toggleSnippetModal } = useStore();
   const { saveSnippet } = useSnippets();
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -11,7 +11,7 @@ export function SnippetModal() {
   const handleSave = async () => {
     if (!name.trim()) return;
     setSaving(true);
-    await saveSnippet({ id: "", name: name.trim(), code, language, createdAt: "", updatedAt: "" });
+    await saveSnippet({ id: "", name: name.trim(), code, language, createdAt: "", updatedAt: "", projectPath: project?.path ?? null, projectType: project?.type ?? null });
     setCode("");
     setActiveSnippetId(null);
     setSaving(false);

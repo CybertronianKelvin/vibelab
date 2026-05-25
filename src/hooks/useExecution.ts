@@ -4,12 +4,12 @@ import { useStore } from "../store";
 import type { Language } from "../types";
 
 export function useExecution() {
-  const { appendOutput, clearOutput, setIsRunning, settings, project, prependHistory } = useStore();
+  const { appendOutput, setIsRunning, settings, project, prependHistory } = useStore();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const execute = useCallback(
     async (code: string, language: Language) => {
-      clearOutput();
+      appendOutput({ output_type: "separator", content: language, timestamp: Date.now() });
       setIsRunning(true);
       try {
         await tauriClient.executeCode(code, language, settings.nodePath, settings.phpPath, project?.path ?? null);
@@ -18,14 +18,17 @@ export function useExecution() {
         setIsRunning(false);
       }
     },
-    [clearOutput, setIsRunning, appendOutput, settings.nodePath, settings.phpPath, project]
+    [appendOutput, setIsRunning, settings.nodePath, settings.phpPath, project]
   );
 
   const run = useCallback(
     async (code: string, language: Language) => {
       if (code.trim()) {
         tauriClient
-          .saveHistoryEntry({ id: "", code, language, ranAt: "" }, settings.historyLimit)
+          .saveHistoryEntry(
+            { id: "", code, language, ranAt: "", projectPath: project?.path ?? null, projectType: project?.type ?? null },
+            settings.historyLimit,
+          )
           .then((entry) => prependHistory(entry))
           .catch(() => {});
       }

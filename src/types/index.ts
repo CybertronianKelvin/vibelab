@@ -1,5 +1,5 @@
 export interface ExecutionLine {
-  output_type: "stdout" | "stderr" | "info";
+  output_type: "stdout" | "stderr" | "info" | "separator";
   content: string;
   timestamp: number;
 }
@@ -15,6 +15,8 @@ export interface Snippet {
   language: "js" | "ts" | "php";
   createdAt: string;
   updatedAt: string;
+  projectPath?: string | null;
+  projectType?: string | null;
 }
 
 export interface Package {
@@ -29,6 +31,8 @@ export interface HistoryEntry {
   code: string;
   language: Language;
   ranAt: string;
+  projectPath?: string | null;
+  projectType?: string | null;
 }
 
 export interface Settings {
